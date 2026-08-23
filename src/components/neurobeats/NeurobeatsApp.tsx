@@ -179,6 +179,7 @@ const iconPool = [
 
 function loadJSON(key, fallback) {
   try {
+    if (typeof window === 'undefined' || !window.localStorage) return fallback;
     const legacyKey = LEGACY_STORAGE_KEYS[key];
     if (!localStorage.getItem(key) && legacyKey && localStorage.getItem(legacyKey)) {
       localStorage.setItem(key, localStorage.getItem(legacyKey));
@@ -190,6 +191,7 @@ function loadJSON(key, fallback) {
 }
 
 function loadStoredFlag(key) {
+  if (typeof window === 'undefined' || !window.localStorage) return false;
   const legacyKey = LEGACY_STORAGE_KEYS[key];
   if (!localStorage.getItem(key) && legacyKey && localStorage.getItem(legacyKey)) {
     localStorage.setItem(key, localStorage.getItem(legacyKey));
