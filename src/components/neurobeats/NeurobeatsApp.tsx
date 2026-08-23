@@ -1331,7 +1331,7 @@ useEffect(() => {
       <Footer navigate={navigate} />
       <audio
         ref={songAudioRef}
-        src={selectedSong?.previewUrl || ''}
+        src={selectedSong?.previewUrl || undefined}
         loop
         onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
         onTimeUpdate={(event) => setAudioCurrentTime(event.currentTarget.currentTime || 0)}
@@ -1427,8 +1427,25 @@ function HomePage({ navigate }) {
         <button className="primary-action" onClick={() => navigate('focus')}><Play size={18} /> Focus Test</button>
       </div>
       <div className="landing-panel">
-        <h2>What you get</h2>
-        <p>Role-aware questions, iTunes previews, timed testing, AI insight cards, feedback analysis, and evidence-backed music choices.</p>
+        <div className="signal-console-heading">
+          <span><Activity size={16} /> Live focus signal</span>
+          <strong>Ready</strong>
+        </div>
+        <div className="signal-console" aria-hidden="true">
+          <div className="signal-console-grid" />
+          <div className="signal-wave">
+            {Array.from({ length: 28 }, (_, index) => <i key={index} style={{ '--wave-index': index }} />)}
+          </div>
+          <span className="signal-node signal-node-one" />
+          <span className="signal-node signal-node-two" />
+          <span className="signal-node signal-node-three" />
+        </div>
+        <div className="signal-console-metrics">
+          <span><small>Audio</small><strong>Adaptive</strong></span>
+          <span><small>Tasks</small><strong>Timed</strong></span>
+          <span><small>Insight</small><strong>Personal</strong></span>
+        </div>
+        <p>Turn sound, mood, and performance into a focus pattern that is uniquely yours.</p>
       </div>
       <div className="landing-band">
         <Metric label="Features" value="AI + iTunes" />
