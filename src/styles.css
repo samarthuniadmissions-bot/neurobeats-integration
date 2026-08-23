@@ -4418,19 +4418,21 @@ h1, h2, h3, .content-page h1, .auth-view h1, .home-section h2, .brand {
 .signal-console-metrics {
   position: relative;
   z-index: 1;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .signal-console-metrics span {
-  min-height: 64px;
-  display: grid;
-  place-content: center;
-  gap: 4px;
-  padding: 10px 12px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
   text-align: center;
   background: var(--surface-tint);
-  border-radius: 18px;
+  border-radius: 999px;
   border: 0;
 }
 
@@ -4445,16 +4447,18 @@ h1, h2, h3, .content-page h1, .auth-view h1, .home-section h2, .brand {
 }
 
 .signal-console-metrics strong {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   overflow-wrap: anywhere;
 }
 
 .landing-panel > p {
   position: relative;
   z-index: 1;
+  max-width: 340px;
+  margin: 0 auto;
   color: var(--teal-deep);
-  font-size: 0.92rem;
-  line-height: 1.55;
+  font-size: 0.8rem;
+  line-height: 1.5;
   text-align: center;
 }
 
