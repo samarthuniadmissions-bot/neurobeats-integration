@@ -1331,7 +1331,7 @@ useEffect(() => {
       <Footer navigate={navigate} />
       <audio
         ref={songAudioRef}
-        src={selectedSong?.previewUrl || ''}
+        src={selectedSong?.previewUrl || undefined}
         loop
         onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
         onTimeUpdate={(event) => setAudioCurrentTime(event.currentTarget.currentTime || 0)}

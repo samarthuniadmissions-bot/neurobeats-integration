@@ -3093,6 +3093,10 @@ select:focus-visible {
   padding: clamp(72px, 10vh, 118px) 0 54px;
 }
 
+.landing > * {
+  min-width: 0;
+}
+
 .landing > .hero-copy {
   position: relative;
   z-index: 1;
@@ -3626,7 +3630,7 @@ select:focus {
   .site-shell { width: min(100% - 24px, 1220px); }
   .top-nav { gap: 10px; }
   .landing { padding-top: 76px; }
-  .landing .hero-copy h1 { font-size: clamp(4rem, 22vw, 6.3rem); }
+  .landing .hero-copy h1 { max-width: 100%; font-size: 3.55rem; overflow-wrap: anywhere; }
   .landing > .hero-copy::before { left: 0; width: 58px; box-shadow: 68px 0 0 var(--orange), 136px 0 0 var(--teal); }
   .landing-panel { min-height: 390px; padding: 16px; }
   .signal-console { min-height: 200px; }
