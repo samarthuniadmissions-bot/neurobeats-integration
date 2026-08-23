@@ -4339,12 +4339,15 @@ h1, h2, h3, .content-page h1, .auth-view h1, .home-section h2, .brand {
 .signal-console-heading {
   position: relative;
   z-index: 1;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 8px;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.58rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  padding-top: 8px;
+  text-align: center;
 }
 
 .signal-console-heading span,
