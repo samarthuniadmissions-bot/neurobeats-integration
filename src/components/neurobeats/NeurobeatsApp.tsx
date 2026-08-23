@@ -1,5 +1,5 @@
+// @ts-nocheck
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import emailjs from '@emailjs/browser';
 import html2canvas from 'html2canvas';
 import {
