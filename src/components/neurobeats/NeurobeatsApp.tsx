@@ -1,0 +1,2703 @@
+// @ts-nocheck
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import emailjs from '@emailjs/browser';
+import html2canvas from 'html2canvas';
+import {
+  Activity,
+  BarChart3,
+  Brain,
+  Check,
+   ChevronDown,
+  ChevronRight,
+  Clock3,
+  Download,
+  Eye,
+  EyeOff,
+  Headphones,
+  Lock,
+  LogIn,
+  Mail,
+  Music2,
+  Pause,
+  Play,
+  RefreshCw,
+  Search,
+  Share2,
+  SlidersHorizontal,
+  Sparkles,
+  Target,
+  TimerReset,
+  UserPlus,
+  WandSparkles,
+} from 'lucide-react';
+
+
+const STORAGE_KEY = 'neurobeats-sessions';
+const USER_KEY = 'neurobeats-user';
+const USERS_KEY = 'neurobeats-users';
+const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || '';
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '';
+const EMAILJS_ADMIN_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_ADMIN_TEMPLATE_ID || EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '';
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'neurobeats.work@gmail.com';
+const PRIVACY_ACCEPTED_KEY = 'neurobeats-privacy-accepted';
+const LEGACY_STORAGE_KEYS = {
+  [STORAGE_KEY]: 'neuro' + 'beat-sessions',
+  [USER_KEY]: 'neuro' + 'beat-user',
+  [USERS_KEY]: 'neuro' + 'beat-users',
+  [PRIVACY_ACCEPTED_KEY]: 'neuro' + 'beat-privacy-accepted',
+};
+
+const primaryNavItems = [
+  ['home', 'Home'],
+  ['focus', 'Focus Test'],
+  ['history', 'History'],
+];
+
+const moreNavItems = [
+  ['features', 'Features'],
+  ['how', 'How It Works'],
+  ['about', 'About Us'],
+  ['results', 'Results'],
+  ['contact', 'Contact'],
+];
+
+const audioProfiles = [
+  { id: 'brown-noise', name: 'Brown Noise', label: 'Deep steady noise', tempo: '0 BPM', color: '#83684c' },
+  { id: 'lofi', name: 'Lo-fi Pulse', label: 'Warm beat, soft texture', tempo: '72 BPM', color: '#2d8c7f' },
+  { id: 'alpha', name: 'Alpha Waves', label: 'Clean 10 Hz shimmer', tempo: '10 Hz', color: '#c49f3f' },
+  { id: 'itunes', name: 'iTunes Music', label: 'Apple/iTunes song preview', tempo: '30 sec', color: '#a5533f' },
+  { id: 'silence', name: 'Silence', label: 'Control condition', tempo: '0 BPM', color: '#56616d' },
+];
+
+const taskTypes = [
+  { id: 'math', name: 'Mental Math', icon: Target, prompt: 'Fast accuracy under pressure' },
+  { id: 'memory', name: 'Memory Recall', icon: Brain, prompt: 'Recall the previous keyword' },
+  { id: 'icons', name: 'Missing Icon Memory', icon: Activity, prompt: 'Spot the hidden symbol' },
+];
+
+const taskGames = {
+  math: [
+    { id: 'math-sort', name: 'Speed Sort', prompt: 'Solve each equation, then sort the result into EVEN or ODD', mode: 'sort', trials: [{ q: '8 x 7', a: 'even' }, { q: '13 + 18', a: 'odd' }, { q: '96 / 6', a: 'even' }, { q: '27 - 8', a: 'odd' }, { q: '14 x 9', a: 'even' }, { q: '125 - 42', a: 'odd' }, { q: '18 x 7', a: 'even' }, { q: '144 / 9 + 5', a: 'odd' }] },
+    { id: 'math-bonds', name: 'Number Bonds Rush', prompt: 'Tap numbers that pair with one already seen to reach 100', mode: 'bonds', trials: [{ q: '37', a: 'skip' }, { q: '52', a: 'skip' }, { q: '63', a: 'pair' }, { q: '48', a: 'pair' }, { q: '18', a: 'skip' }, { q: '82', a: 'pair' }, { q: '44', a: 'skip' }, { q: '56', a: 'pair' }, { q: '25', a: 'skip' }, { q: '75', a: 'pair' }] },
+    { id: 'math-sequence', name: 'Number patterns', prompt: 'Choose the missing number in each sequence', trials: [{ q: '2, 4, 6, 8, ?', a: '10', mode: 'choice', options: ['10', '12', '14', '16'] }, { q: '5, 10, 15, 20, ?', a: '25', mode: 'choice', options: ['20', '25', '30', '35'] }, { q: '3, 6, 12, 24, ?', a: '48', mode: 'choice', options: ['36', '42', '48', '54'] }, { q: '30, 25, 20, 15, ?', a: '10', mode: 'choice', options: ['5', '10', '12', '15'] }, { q: '1, 4, 9, 16, ?', a: '25', mode: 'choice', options: ['20', '24', '25', '36'] }, { q: '2, 6, 18, 54, ?', a: '162', mode: 'choice', options: ['108', '144', '162', '216'] }] },
+  ],
+  memory: [
+    { id: 'memory-keywords', name: 'Keyword chain', prompt: 'Recall the previous 4-character keyword', trials: [{ q: 'K7Q2', a: null, intro: true }, { q: 'M4P9', a: 'K7Q2' }, { q: 'A8T3', a: 'M4P9' }, { q: 'R2N6', a: 'A8T3' }, { q: 'L5X1', a: 'R2N6' }, { q: 'C9V4', a: 'L5X1' }] },
+    { id: 'memory-category-sort', name: 'Category Sort Recall', prompt: 'Watch a stream of words, then answer gist questions about what you saw', trials: [] },
+   { id: 'memory-spatial', name: 'Spatial-Verbal Combo', prompt: 'Watch words appear around the screen, then recall where each one was', trials: [] },
+  ],
+ icons: [
+    { id: 'icons-missing', name: 'Missing icon', prompt: 'Find the icon hidden from the grid', count: 5 },
+    { id: 'icons-color-match', name: 'Icon-Color Matching', prompt: 'Remember which color each icon was paired with', trials: [] },
+    { id: 'icons-category-count', name: 'Category Count-in-Grid', prompt: 'View a mixed icon grid, then answer gist questions about what you saw', trials: [] },
+  ],
+};
+
+const roleOptions = ['Student', 'Teacher', 'Employee', 'Creator', 'Other'];
+const genreOptions = ['Pop', 'Hip-Hop', 'Rock', 'Classical', 'Jazz', 'Electronic', 'Ambient', 'Lo-fi'];
+const languageOptions = ['Any', 'English', 'Hindi', 'Bengali', 'Tamil', 'Telugu', 'Punjabi', 'Korean', 'Japanese', 'Spanish', 'French', 'Arabic'];
+
+const roleQuestions = {
+  Student: [
+    ['activity', 'What are you working on?', ['Problem solving', 'Reading or notes', 'Memorizing']],
+    ['energy', 'What energy level helps you study?', ['Calm and steady', 'Medium rhythm', 'High energy']],
+  ],
+  Teacher: [
+    ['activity', 'What kind of work are you doing?', ['Grading', 'Lesson planning', 'Admin work']],
+    ['energy', 'What pace feels best?', ['Quiet focus', 'Steady pace', 'Motivating']],
+  ],
+  Employee: [
+    ['activity', 'What work mode are you in?', ['Deep work', 'Email/admin', 'Creative work']],
+    ['energy', 'What helps you stay productive?', ['Calm zone', 'Steady rhythm', 'Momentum']],
+  ],
+  Creator: [
+    ['activity', 'What are you creating?', ['Writing', 'Designing', 'Editing']],
+    ['energy', 'What kind of flow do you want?', ['Soft flow', 'Groove', 'Drive']],
+  ],
+  Other: [
+    ['activity', 'What are you trying to do?', ['Focus', 'Relax', 'Get energy']],
+    ['energy', 'What intensity works for you?', ['Low', 'Medium', 'High']],
+  ],
+};
+
+const sharedQuestions = [
+  ['lyrics', 'Do lyrics distract you?', ['No lyrics', 'Soft vocals are fine', 'Lyrics are okay']],
+  ['sound', 'Which sound texture feels best?', ['Warm beats', 'Clean piano', 'Cinematic focus']],
+];
+
+const baseTrials = {
+  math: [
+    { q: '17 + 26', a: '43' },
+    { q: '64 - 19', a: '45' },
+    { q: '8 x 7', a: '56' },
+    { q: '99 - 38', a: '61' },
+    { q: '12 x 6', a: '72' },
+    { q: '144 / 12', a: '12' },
+  ],
+  memory: [
+    { q: 'K7Q2', a: null, intro: true },
+    { q: 'M4P9', a: 'K7Q2' },
+    { q: 'A8T3', a: 'M4P9' },
+    { q: 'R2N6', a: 'A8T3' },
+    { q: 'L5X1', a: 'R2N6' },
+    { q: 'C9V4', a: 'L5X1' },
+  ],
+};
+
+const iconPool = [
+  { icon: '🍎', label: 'apple' },
+  { icon: '🚗', label: 'car' },
+  { icon: '🏀', label: 'basketball' },
+  { icon: '🐶', label: 'dog' },
+  { icon: '⭐', label: 'star' },
+  { icon: '🎈', label: 'balloon' },
+  { icon: '🎵', label: 'music note' },
+  { icon: '🌙', label: 'moon' },
+  { icon: '❤️', label: 'heart' },
+  { icon: '🌳', label: 'tree' },
+  { icon: '📷', label: 'camera' },
+  { icon: '🌍', label: 'globe' },
+  { icon: '🍕', label: 'pizza' },
+  { icon: '☀️', label: 'sun' },
+  { icon: '🚀', label: 'rocket' },
+  { icon: '🎧', label: 'headphones' },
+  { icon: '📚', label: 'books' },
+  { icon: '🧠', label: 'brain' },
+  { icon: '⚽', label: 'football' },
+  { icon: '🎹', label: 'piano' },
+  { icon: '🦋', label: 'butterfly' },
+  { icon: '☕', label: 'coffee' },
+  { icon: '💡', label: 'light bulb' },
+  { icon: '🎯', label: 'target' },
+  { icon: '🐱', label: 'cat' },
+  { icon: '🌊', label: 'wave' },
+  { icon: '🍀', label: 'clover' },
+  { icon: '🛸', label: 'ufo' },
+];
+
+function loadJSON(key, fallback) {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return fallback;
+    const legacyKey = LEGACY_STORAGE_KEYS[key];
+    if (!localStorage.getItem(key) && legacyKey && localStorage.getItem(legacyKey)) {
+      localStorage.setItem(key, localStorage.getItem(legacyKey));
+    }
+    return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+  } catch {
+    return fallback;
+  }
+}
+
+function loadStoredFlag(key) {
+  if (typeof window === 'undefined' || !window.localStorage) return false;
+  const legacyKey = LEGACY_STORAGE_KEYS[key];
+  if (!localStorage.getItem(key) && legacyKey && localStorage.getItem(legacyKey)) {
+    localStorage.setItem(key, localStorage.getItem(legacyKey));
+  }
+  return localStorage.getItem(key) === 'true';
+}
+
+function defaultAnswers(role) {
+  return Object.fromEntries([...roleQuestions[role], ...sharedQuestions].map(([id, , options]) => [id, options[0]]));
+}
+
+function parseArtistPreference(value) {
+  const raw = value.trim().replace(/\s+/g, ' ');
+  if (!raw) return { artist: '', styleHints: [] };
+  const lower = raw.toLowerCase();
+  const styleHints = ['lofi', 'ambient', 'calm', 'piano', 'instrumental', 'electronic', 'upbeat', 'chill', 'cinematic', 'focus', 'study']
+    .filter((hint) => lower.includes(hint));
+  const markerMatch = raw.match(/\b(?:by|from|artist|singer|composer|like|similar to)\s+([a-z0-9 .'-]+?)(?:\s+(?:for|with|but|and|that|which|while|because)\b|[,.;]|$)/i);
+  const promptWords = /\b(?:recommend|songs?|music|track|tracks|playlist|please|give|me|for|focus|study|work|while|with|like|similar|to|by|from|artist|based|on|calm|upbeat|lofi|ambient|instrumental|piano|electronic|cinematic|chill)\b/gi;
+  const artist = (markerMatch?.[1] || raw).replace(promptWords, ' ').replace(/\s+/g, ' ').trim().split(' ').slice(0, 4).join(' ');
+  return { artist: artist || raw.split(/\s+/).slice(0, 4).join(' '), styleHints };
+}
+
+function buildSearchTerm(role, answers, artistPreference, genres, languagePreference = 'Any') {
+  const { artist, styleHints } = parseArtistPreference(artistPreference);
+  const quizTerms = Object.values(answers).join(' ');
+  const languageTerm = languagePreference && languagePreference !== 'Any' ? `${languagePreference} music` : '';
+  return [artist, ...styleHints.slice(0, 2), ...genres, languageTerm, quizTerms, role, 'focus music'].filter(Boolean).join(' ');
+}
+
+function fallbackMusicOptions(role, answers, artistPreference, genres, languagePreference = 'Any') {
+  const base = buildSearchTerm(role, answers, artistPreference, genres, languagePreference);
+  return [
+    { title: 'Personal Focus Match', searchTerm: `${base} instrumental`, reason: 'Matches your role, work mode, and optional artist or genre preferences.' },
+    { title: 'Low Distraction Flow', searchTerm: `${base} calm ambient`, reason: 'Prioritizes steady attention with fewer distracting changes.' },
+    { title: 'Momentum Track', searchTerm: `${base} upbeat focus`, reason: 'Adds energy while staying aligned with your selected preferences.' },
+  ];
+}
+
+function parseMusicOptions(value, fallback) {
+  try {
+    const cleaned = String(value || '').replace(/```json|```/gi, '').trim();
+    const parsed = JSON.parse(cleaned);
+    if (!Array.isArray(parsed)) return fallback;
+    const valid = parsed
+      .filter((option) => option?.title && option?.searchTerm && option?.reason)
+      .slice(0, 4)
+      .map((option) => ({
+        title: String(option.title).trim(),
+        searchTerm: String(option.searchTerm).trim(),
+        reason: String(option.reason).trim(),
+      }));
+    return valid.length >= 3 ? valid : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function ensureMusicOptionDiversity(options, { role, answers, artistPreference, genres, languagePreference, taskType, preMood }) {
+  const context = [
+    artistPreference,
+    ...genres,
+    languagePreference !== 'Any' ? languagePreference : '',
+    ...Object.values(answers),
+    taskType === 'memory' ? 'memory recall' : taskType === 'icons' ? 'visual memory' : 'mental math',
+    role,
+  ].filter(Boolean).join(' ');
+  const variations = ['quiet instrumental piano', 'lofi ambient low distraction', 'gentle acoustic steady rhythm', 'cinematic focus soundtrack'];
+  const genericQuery = /^(any|english|hindi|bengali|tamil|telugu|punjabi|korean|japanese|spanish|french|arabic)?\s*(focus|study|studying)?\s*(music|songs?)?$/i;
+  const seen = new Set();
+  return options.map((option, index) => {
+    const baseQuery = option.searchTerm.replace(/\s+/g, ' ').trim();
+    const normalized = baseQuery.toLowerCase();
+    const needsContext = !baseQuery || genericQuery.test(baseQuery) || seen.has(normalized);
+    const searchTerm = needsContext
+      ? `${context} ${variations[index % variations.length]}`.replace(/\s+/g, ' ').trim()
+      : baseQuery;
+    seen.add(searchTerm.toLowerCase());
+    return { ...option, searchTerm };
+  });
+}
+
+async function generateGroqMusicOptions({ role, answers, artistPreference, genres, languagePreference, taskType, preMood, previousSessions }) {
+  const fallback = fallbackMusicOptions(role, answers, artistPreference, genres, languagePreference);
+  const response = await callGroq([
+    { role: 'system', content: 'You are Neurobeats music personalization AI. Create 3 or 4 genuinely different recommendations for this specific person and session. Reason from every supplied preference: role, exact answers, task, mood, genre, language, artist, and previous session patterns. Each searchTerm must be a concise, relevant music query containing concrete style terms, not generic filler. Make the options meaningfully different: one closest match, one lower-distraction alternative, one energy or mood adjustment, and one artist or regional variation when possible. Do not use generic phrases such as English Focus Music unless explicitly requested. Return JSON only as an array of objects with exactly: title, searchTerm, reason.' },
+    { role: 'user', content: JSON.stringify({ role, answers, artistPreference, genres, languagePreference, taskType, preMood, previousSessions: previousSessions.slice(0, 5).map((session) => ({ taskName: session.taskName, soundUsed: session.soundUsed, accuracy: session.accuracy, postMood: session.postMood, genres: session.genres, languagePreference: session.languagePreference })) }) },
+  ], JSON.stringify(fallback));
+  return ensureMusicOptionDiversity(parseMusicOptions(response, fallback), { role, answers, artistPreference, genres, languagePreference, taskType, preMood });
+}
+
+function getMusicIntentHints(prompt) {
+  const lower = String(prompt).toLowerCase();
+  const hints = [];
+  const add = (condition, value) => { if (condition && !hints.includes(value)) hints.push(value); };
+  add(/\b(calm|peaceful|relax|relaxing|soothing|gentle|quiet|soft)\b/.test(lower), 'calm');
+  add(/\b(energetic|energy|upbeat|motivating|motivational|fast|active)\b/.test(lower), 'upbeat');
+  add(/\b(deep work|deep focus|concentrat|focus|study|studying|reading|coding|work)\b/.test(lower), 'focus');
+  add(/\b(sleep|sleeping|bedtime)\b/.test(lower), 'sleep');
+  add(/\b(meditat|mindful|mindfulness)\b/.test(lower), 'meditation');
+  add(/\b(no lyrics|without lyrics|no vocals|without vocals|instrumental)\b/.test(lower), 'instrumental');
+  add(/\b(piano|keys|keyboard)\b/.test(lower), 'piano');
+  add(/\b(rain|thunder|nature|forest|ocean|white noise)\b/.test(lower), 'nature sounds');
+  add(/\b(lo[- ]?fi)\b/.test(lower), 'lofi');
+  add(/\b(ambient|atmospheric|drone)\b/.test(lower), 'ambient');
+  add(/\b(cinematic|film score|soundtrack|orchestral)\b/.test(lower), 'cinematic');
+  add(/\b(acoustic|unplugged)\b/.test(lower), 'acoustic');
+  return hints;
+}
+
+function buildFallbackMusicKeywords(prompt, languagePreference = 'Any') {
+  const lower = prompt.toLowerCase();
+  const genreHints = ['lofi', 'lo-fi', 'ambient', 'classical', 'piano', 'jazz', 'pop', 'hip hop', 'hip-hop', 'rock', 'electronic', 'instrumental', 'acoustic', 'cinematic']
+    .filter((term) => lower.includes(term));
+  const moodHints = ['calm', 'focus', 'study', 'studying', 'relaxing', 'chill', 'deep work', 'energetic', 'upbeat', 'sleep', 'meditation']
+    .filter((term) => lower.includes(term))
+    .map((term) => term === 'studying' ? 'study' : term);
+  const { artist, styleHints } = parseArtistPreference(prompt);
+  const intentHints = getMusicIntentHints(prompt);
+  const words = lower
+    .replace(/[^a-z0-9\s'-]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length > 2 && !['want', 'music', 'songs', 'song', 'help', 'while', 'with', 'make', 'give', 'please', 'need', 'some', 'that', 'will', 'like', 'best', 'user', 'for', 'the', 'and', 'study', 'recommend', 'recommendation', 'recommendations', 'could', 'would', 'should', 'something', 'please'].includes(word))
+    .filter((word) => !['calm', 'focus', 'studying', 'energetic', 'upbeat', 'relaxing', 'instrumental', 'ambient', 'lofi', 'classical', 'piano', 'jazz', 'pop', 'rock', 'electronic', 'acoustic', 'cinematic'].includes(word));
+  const languageTerm = languagePreference && languagePreference !== 'Any' ? `${languagePreference} music` : '';
+  const combined = [...new Set([artist, ...genreHints, languageTerm, ...intentHints, ...styleHints, ...moodHints, ...words.slice(0, 3)].filter(Boolean))];
+  return combined.slice(0, 7).join(' ');
+}
+
+async function extractMusicSearchTerm(prompt, fallbackTerm, languagePreference = 'Any') {
+  const cleanPrompt = String(prompt || '').trim();
+  if (!cleanPrompt) return fallbackTerm;
+  const shortKeyword = /^[a-z0-9 .'-]{1,28}$/i.test(cleanPrompt) && cleanPrompt.split(/\s+/).length <= 3;
+  if (shortKeyword) return cleanPrompt;
+  const fallback = buildFallbackMusicKeywords(cleanPrompt, languagePreference) || fallbackTerm;
+  const extracted = await callGroq([
+    { role: 'system', content: 'Extract an iTunes music search query from the user request. Return only 3 to 8 keywords, artist names, genres, moods, and language or regional music terms. Do not include explanations, punctuation-heavy text, or full sentences.' },
+    { role: 'user', content: JSON.stringify({ prompt: cleanPrompt, languagePreference }) },
+  ], fallback);
+  return extracted.replace(/["`]/g, '').replace(/\s+/g, ' ').trim().split(/\s+/).slice(0, 8).join(' ') || fallback;
+}
+
+function getTimeAdjustedPercent(taskType, correct, total, elapsed, gameVariant = '') {
+  if (!total) return 0;
+  const rawPercent = (correct / total) * 100;
+  const targetSeconds = gameVariant === 'math-sort' ? 3.5 : { math: 6, memory: 5, icons: 7 }[taskType];
+  return Math.max(0, Math.round(rawPercent - Math.max(0, elapsed / total - targetSeconds) * 3.5));
+}
+
+function shuffleItems(items) {
+  return [...items].sort(() => Math.random() - 0.5);
+}
+
+function generateIconTrials(count = 5, mode = 'missing') {
+  if (mode === 'position') return Array.from({ length: count }, (_, index) => {
+    const grid = shuffleItems(iconPool).slice(0, 9);
+    const targetIndex = Math.floor(Math.random() * grid.length);
+    return { q: `Position round ${index + 1}`, a: String(targetIndex + 1), grid, missingIndex: targetIndex, mode, target: grid[targetIndex], options: shuffleItems(Array.from({ length: 9 }, (_, cell) => String(cell + 1))) };
+  });
+  if (mode === 'odd') return Array.from({ length: count }, (_, index) => {
+    const common = shuffleItems(iconPool)[0];
+    const odd = shuffleItems(iconPool.filter((item) => item.icon !== common.icon))[0];
+    const grid = shuffleItems(Array.from({ length: 8 }, () => common).concat(odd));
+    return { q: `Odd-one-out round ${index + 1}`, a: odd.icon, grid, missingIndex: -1, mode, options: shuffleItems([odd, common, ...shuffleItems(iconPool.filter((item) => item.icon !== odd.icon && item.icon !== common.icon)).slice(0, 4)]) };
+  });
+  return Array.from({ length: count }, (_, index) => {
+    const grid = shuffleItems(iconPool).slice(0, 9);
+    const missingIndex = Math.floor(Math.random() * grid.length);
+    const answer = grid[missingIndex];
+    const distractors = shuffleItems(iconPool.filter((item) => item.icon !== answer.icon && !grid.some((gridItem) => gridItem.icon === item.icon))).slice(0, 5);
+    return {
+      q: `Icon round ${index + 1}`,
+      a: answer.icon,
+      grid,
+      missingIndex,
+      options: shuffleItems([answer, ...distractors]),
+      mode,
+    };
+  });
+}
+
+const categoryWordPool = {
+  animal: ['TIGER', 'EAGLE', 'WHALE', 'FALCON', 'PANTHER', 'DOLPHIN', 'ZEBRA', 'OTTER'],
+  object: ['CHAIR', 'LAMP', 'PENCIL', 'KETTLE', 'MIRROR', 'BASKET', 'ANCHOR', 'LANTERN'],
+  color: ['BLUE', 'GREEN', 'AMBER', 'VIOLET', 'CORAL', 'TEAL', 'IVORY', 'CRIMSON'],
+};
+
+function numericOptions(correct) {
+  const candidates = new Set([correct, correct + 1, Math.max(1, correct - 1), correct + 2]);
+  return shuffleItems([...candidates]).map(String).slice(0, 4);
+}
+
+function generateCategoryStreamTrials() {
+  const counts = { animal: 4, object: 3, color: 3 };
+  const chosen = {};
+  const usedWords = new Set();
+  Object.keys(categoryWordPool).forEach((category) => {
+    const picks = shuffleItems(categoryWordPool[category]).slice(0, counts[category]);
+    chosen[category] = picks;
+    picks.forEach((word) => usedWords.add(word));
+  });
+
+  const streamWords = shuffleItems(
+    Object.keys(chosen).flatMap((category) => chosen[category].map((word) => ({ word, category })))
+  );
+  const streamTrials = streamWords.map((item, index) => ({
+    q: item.word,
+    a: null,
+    intro: true,
+    stream: true,
+    category: item.category,
+    streamIndex: index + 1,
+    streamTotal: streamWords.length,
+  }));
+
+  const lurePool = Object.keys(categoryWordPool).flatMap((category) =>
+    categoryWordPool[category].filter((word) => !usedWords.has(word))
+  );
+  const lures = shuffleItems(lurePool).slice(0, 2);
+  const allCategoriesFlat = Object.keys(chosen);
+  const seenWord = shuffleItems(chosen[allCategoriesFlat[Math.floor(Math.random() * allCategoriesFlat.length)]])[0];
+
+  const questionTrials = [
+    { q: `Was "${seenWord}" in the word stream?`, a: 'yes', mode: 'gist', gistType: 'seen', options: ['Yes', 'No'] },
+    { q: `Was "${lures[0]}" in the word stream?`, a: 'no', mode: 'gist', gistType: 'seen', options: ['Yes', 'No'] },
+    { q: 'How many animal words appeared?', a: String(counts.animal), mode: 'gist', gistType: 'count', options: numericOptions(counts.animal) },
+    { q: 'How many color words appeared?', a: String(counts.color), mode: 'gist', gistType: 'count', options: numericOptions(counts.color) },
+    {
+      q: 'Which of these words was NOT in the stream?',
+      a: lures[1],
+      mode: 'gist',
+      gistType: 'oddOne',
+      options: shuffleItems([lures[1], ...shuffleItems([...chosen.animal, ...chosen.object, ...chosen.color]).slice(0, 3)]),
+    },
+  ];
+
+  return [...streamTrials, ...questionTrials];
+}
+
+const spatialWordPool = ['NOVA', 'ECHO', 'LUNA', 'CORE', 'AXIS', 'GLOW', 'RUSH', 'VOID', 'SPARK', 'DRIFT'];
+const spatialPositions = ['top-left', 'top-right', 'center', 'bottom-left', 'bottom-right'];
+
+function formatPositionLabel(position) {
+  return position === 'center' ? 'center' : `${position.replace('-', ' ')} corner`;
+}
+
+function generateSpatialTrials() {
+  const words = shuffleItems(spatialWordPool).slice(0, 5);
+  const positions = shuffleItems(spatialPositions);
+  const pairs = words.map((word, index) => ({ word, position: positions[index] }));
+
+  const streamTrials = pairs.map((pair, index) => ({
+    q: pair.word,
+    a: null,
+    intro: true,
+    stream: true,
+    spatial: true,
+    position: pair.position,
+    streamIndex: index + 1,
+    streamTotal: pairs.length,
+  }));
+
+  const locateQuestions = shuffleItems(pairs).slice(0, 3).map((pair) => ({
+    q: `Where did "${pair.word}" appear?`,
+    a: pair.position,
+    mode: 'spatial-locate',
+    options: spatialPositions,
+  }));
+
+  const recallQuestions = shuffleItems(pairs).slice(0, 2).map((pair) => ({
+    q: `Which word appeared in the ${formatPositionLabel(pair.position)}?`,
+    a: pair.word,
+    mode: 'spatial-recall',
+    targetPosition: pair.position,
+    options: shuffleItems([pair.word, ...shuffleItems(words.filter((word) => word !== pair.word)).slice(0, 3)]),
+  }));
+
+  return [...streamTrials, ...shuffleItems([...locateQuestions, ...recallQuestions])];
+}
+
+const colorPalette = [
+  { name: 'Ocean Blue', hex: '#2e6f95' },
+  { name: 'Sunset Orange', hex: '#d97a3f' },
+  { name: 'Forest Green', hex: '#3f7d52' },
+  { name: 'Blush Pink', hex: '#c96b8a' },
+  { name: 'Golden Yellow', hex: '#c9a227' },
+  { name: 'Violet Mist', hex: '#7d5fa6' },
+];
+
+function generateIconColorTrials() {
+  const icons = shuffleItems(iconPool).slice(0, 5);
+  const colors = shuffleItems(colorPalette).slice(0, 5);
+  const pairs = icons.map((item, index) => ({ icon: item.icon, label: item.label, color: colors[index] }));
+
+  const streamTrials = pairs.map((pair, index) => ({
+    q: pair.icon,
+    a: null,
+    intro: true,
+    stream: true,
+    iconColor: true,
+    icon: pair.icon,
+    iconLabel: pair.label,
+    color: pair.color,
+    streamIndex: index + 1,
+    streamTotal: pairs.length,
+  }));
+
+  const colorRecallQuestions = shuffleItems(pairs).slice(0, 3).map((pair) => ({
+    q: 'What color was paired with this icon?',
+    icon: pair.icon,
+    a: pair.color.name,
+    mode: 'color-recall',
+    options: shuffleItems([pair.color, ...shuffleItems(colors.filter((color) => color.name !== pair.color.name)).slice(0, 3)]),
+  }));
+
+  const iconRecallQuestions = shuffleItems(pairs).slice(0, 2).map((pair) => ({
+    q: 'Which icon was paired with this color?',
+    color: pair.color,
+    a: pair.icon,
+    mode: 'icon-recall',
+    options: shuffleItems([pair.icon, ...shuffleItems(icons.map((item) => item.icon).filter((icon) => icon !== pair.icon)).slice(0, 3)]),
+  }));
+
+  return [...streamTrials, ...shuffleItems([...colorRecallQuestions, ...iconRecallQuestions])];
+}
+
+const categoryIconPool = {
+  animal: [
+    { icon: '🐶', label: 'dog' },
+    { icon: '🐱', label: 'cat' },
+    { icon: '🦋', label: 'butterfly' },
+  ],
+  food: [
+    { icon: '🍎', label: 'apple' },
+    { icon: '🍕', label: 'pizza' },
+    { icon: '☕', label: 'coffee' },
+  ],
+  tech: [
+    { icon: '📷', label: 'camera' },
+    { icon: '🎧', label: 'headphones' },
+    { icon: '🚀', label: 'rocket' },
+    { icon: '💡', label: 'light bulb' },
+  ],
+};
+
+const categoryLureIcons = [
+  { icon: '⭐', label: 'star' }, { icon: '🌙', label: 'moon' }, { icon: '❤️', label: 'heart' },
+  { icon: '🌳', label: 'tree' }, { icon: '🌍', label: 'globe' }, { icon: '☀️', label: 'sun' },
+  { icon: '📚', label: 'books' }, { icon: '🧠', label: 'brain' }, { icon: '⚽', label: 'football' },
+  { icon: '🎹', label: 'piano' }, { icon: '🎯', label: 'target' }, { icon: '🌊', label: 'wave' },
+  { icon: '🍀', label: 'clover' }, { icon: '🛸', label: 'ufo' }, { icon: '🎈', label: 'balloon' },
+  { icon: '🎵', label: 'music note' }, { icon: '🚗', label: 'car' }, { icon: '🏀', label: 'basketball' },
+];
+
+function generateIconCategoryGridTrials() {
+  const counts = { animal: 3, food: 3, tech: 4 };
+  const chosen = {};
+  Object.keys(categoryIconPool).forEach((category) => {
+    chosen[category] = shuffleItems(categoryIconPool[category]).slice(0, counts[category]);
+  });
+  const gridItems = shuffleItems(
+    Object.keys(chosen).flatMap((category) => chosen[category].map((item) => ({ ...item, category })))
+  );
+
+  const viewTrial = { q: 'Category grid view', a: null, intro: true, gridView: true, grid: gridItems, viewSeconds: 6 };
+
+  const seenItem = shuffleItems(gridItems)[0];
+  const lureItem = shuffleItems(categoryLureIcons)[0];
+  const lureItem2 = shuffleItems(categoryLureIcons.filter((item) => item.icon !== lureItem.icon))[0];
+
+  const questionTrials = [
+    { q: 'Did you see this icon in the grid?', promptIcon: seenItem.icon, a: 'yes', mode: 'visual-gist', gistType: 'seen', options: ['Yes', 'No'] },
+    { q: 'Did you see this icon in the grid?', promptIcon: lureItem.icon, a: 'no', mode: 'visual-gist', gistType: 'seen', options: ['Yes', 'No'] },
+    { q: 'How many animal icons appeared?', a: String(counts.animal), mode: 'visual-gist', gistType: 'count', options: numericOptions(counts.animal) },
+    { q: 'How many tech icons appeared?', a: String(counts.tech), mode: 'visual-gist', gistType: 'count', options: numericOptions(counts.tech) },
+    {
+      q: 'Which icon was NOT in the grid?',
+      a: lureItem2.icon,
+      mode: 'visual-gist',
+      gistType: 'oddOne',
+      options: shuffleItems([lureItem2, ...shuffleItems(gridItems).slice(0, 3)]).map((item) => item.icon),
+    },
+  ];
+
+  return [viewTrial, ...questionTrials];
+}
+
+function createTrials(taskType, gameId) {
+  const game = taskGames[taskType]?.find((item) => item.id === gameId) || taskGames[taskType]?.[0];
+  if (taskType === 'icons' && game?.id === 'icons-color-match') return generateIconColorTrials();
+  if (taskType === 'icons' && game?.id === 'icons-category-count') return generateIconCategoryGridTrials();
+  if (taskType === 'icons') return generateIconTrials(game?.count || 5, 'missing');
+  if (taskType === 'memory' && game?.id === 'memory-category-sort') return generateCategoryStreamTrials();
+  if (taskType === 'memory' && game?.id === 'memory-spatial') return generateSpatialTrials();
+  return game?.trials || baseTrials[taskType];
+}
+function formatSeconds(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return mins ? `${mins}m ${secs}s` : `${secs}s`;
+}
+
+function formatClock(seconds) {
+  const safeSeconds = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+  const mins = Math.floor(safeSeconds / 60);
+  const secs = Math.floor(safeSeconds % 60);
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+function formatReceiptDate(date) {
+  return new Intl.DateTimeFormat('en-IN', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(date));
+}
+
+function getSessionAverage(sessions, currentId) {
+  const previousSessions = sessions.filter((session) => session.id !== currentId);
+  if (!previousSessions.length) return null;
+  return Math.round(previousSessions.reduce((sum, session) => sum + session.accuracy, 0) / previousSessions.length);
+}
+
+function clampPercent(value) {
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function isValidEmail(email) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const emailPattern = /^[a-z0-9](?:[a-z0-9._%+-]*[a-z0-9])?@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/;
+  const blockedTypoDomains = new Set([
+    'gmil.com',
+    'gmai.com',
+    'gmail.co',
+    'gmail.con',
+    'gmail.cm',
+    'gnail.com',
+    'hotmial.com',
+    'hotmai.com',
+    'yaho.com',
+    'yahoo.con',
+    'outlok.com',
+    'outlook.con',
+  ]);
+  const domain = normalizedEmail.split('@')[1] || '';
+  return emailPattern.test(normalizedEmail) && !blockedTypoDomains.has(domain);
+}
+
+function getFlowStatesForSession(session) {
+  if (session.flowStates?.length) return session.flowStates;
+  const seedText = `${session.id}-${session.accuracy}-${session.postMood}-${session.sessionLength}-${session.taskType}`;
+  const seed = [...seedText].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return Array.from({ length: 7 }, (_, index) => {
+    const value = (seed + index * 19 + session.accuracy + session.postMood * 6) % 100;
+    if (value > 72 || (session.accuracy > 84 && index % 3 === 0)) return 'deep';
+    if (value > 34 || session.accuracy > 58) return 'focused';
+    return 'drifting';
+  });
+}
+
+function getShareText(session, insight = '') {
+  return `My Neurobeats session: ${session.taskName} | ${session.accuracy}/100 | ${formatSeconds(session.sessionLength)} | ${session.soundUsed} | Mood ${session.postMood}/10. ${insight}`.trim();
+}
+
+function getFeedbackSentiment(value) {
+  const text = value.toLowerCase();
+  if (/\b(didn'?t like|dont like|don't like|hate|bad|annoying|distract|too loud|stress|boring|not good)\b/.test(text)) return 'disliked';
+  if (/\b(liked|loved|great|good|helped|focused|calm|perfect|nice|amazing)\b/.test(text)) return 'liked';
+  return 'okay';
+}
+
+function getFeedbackKeywords(value) {
+  const ignored = new Set(['the', 'and', 'for', 'with', 'that', 'this', 'was', 'were', 'very', 'really', 'music', 'song', 'sound', 'felt', 'feel', 'like', 'liked', 'love', 'loved', 'good', 'great', 'okay', 'well', 'more', 'less', 'just', 'not', 'too', 'but', 'wasn', 'didnt', 'didn', 'want', 'need', 'help', 'helped']);
+  return [...new Set(String(value).toLowerCase().match(/[a-z][a-z'-]{2,}/g) || [])]
+    .filter((word) => !ignored.has(word))
+    .slice(0, 5);
+}
+
+function buildFeedbackSearchFallback(feedback, session) {
+  const sentiment = getFeedbackSentiment(feedback);
+  const feedbackKeywords = getFeedbackKeywords(feedback);
+  const scoreBand = session.accuracy >= 80 ? 'deep focus' : session.accuracy >= 55 ? 'steady focus' : 'calm low distraction';
+  const languageTerm = session.languagePreference && session.languagePreference !== 'Any' ? `${session.languagePreference} music` : '';
+  const genreTerm = session.genres?.length ? session.genres.join(' ') : '';
+  const currentSound = session.soundUsed || '';
+  const feedbackTerm = feedbackKeywords.join(' ');
+  if (sentiment === 'liked') return [feedbackTerm, currentSound, genreTerm, languageTerm, scoreBand, 'similar instrumental variety'].filter(Boolean).join(' ');
+  if (sentiment === 'disliked') return [feedbackTerm, genreTerm, languageTerm, scoreBand, 'different calm instrumental alternative focus'].filter(Boolean).join(' ');
+  return [feedbackTerm, genreTerm, languageTerm, scoreBand, 'balanced focus music variety'].filter(Boolean).join(' ');
+}
+
+async function fetchItunesSongs(term, { excludeTrackIds = [], avoidArtist = '', offset = 0 } = {}) {
+  const response = await fetch(`https://itunes.apple.com/search?${new URLSearchParams({ term, media: 'music', entity: 'song', limit: '24', offset: String(offset) })}`);
+  const data = await response.json();
+  const blocked = new Set(excludeTrackIds.map(String));
+  const blockedArtist = avoidArtist.toLowerCase();
+  return (data.results || [])
+    .filter((song) => song.previewUrl)
+    .filter((song) => !blocked.has(String(song.trackId)))
+    .filter((song) => !blockedArtist || song.artistName.toLowerCase() !== blockedArtist)
+    .slice(0, 12);
+}
+
+async function callGroq(messages, fallback) {
+  if (!GROQ_KEY) return fallback;
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages, temperature: 0.65 }),
+    });
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+async function sendEmailJS(templateParams) {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) return { skipped: true };
+  return emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
+}
+
+async function sendAuthEmail({ type, name, email }) {
+  const websiteLink = window.location.origin;
+  return sendEmailJS({
+    type,
+    name,
+    email,
+    user_name: name,
+    user_email: email,
+    website_link: websiteLink,
+    message: type === 'registration' ? 'Welcome to Neurobeats' : 'Neurobeats login',
+  });
+}
+
+async function sendAdminAuthEmail({ type, name, email }) {
+  if (!EMAILJS_SERVICE_ID || !EMAILJS_ADMIN_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) return { skipped: true };
+  const eventLabel = type === 'registration' ? 'signed up' : 'logged in';
+  return emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_ADMIN_TEMPLATE_ID, {
+    type: `admin_${type}`,
+    name: 'Neurobeats Admin',
+    email: ADMIN_EMAIL,
+    user_name: name,
+    user_email: email,
+    login_name: name,
+    login_email: email,
+    admin_email: ADMIN_EMAIL,
+    website_link: window.location.origin,
+    message: `${name} (${email}) ${eventLabel} to Neurobeats at ${new Date().toLocaleString()}.`,
+  }, EMAILJS_PUBLIC_KEY);
+}
+
+function App() {
+  const [page, setPage] = useState('home');
+  const [authMode, setAuthMode] = useState('login');
+  const [user, setUser] = useState(() => loadJSON(USER_KEY, null));
+  const [sessions, setSessions] = useState(() => loadJSON(STORAGE_KEY, []));
+  const [authMessage, setAuthMessage] = useState('');
+  const [loginPrompt, setLoginPrompt] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(() => loadStoredFlag(PRIVACY_ACCEPTED_KEY));
+  const [privacyScrolled, setPrivacyScrolled] = useState(false);
+  const [privacyChecked, setPrivacyChecked] = useState(false);
+  const [role, setRole] = useState('Student');
+  const [quizAnswers, setQuizAnswers] = useState(() => defaultAnswers('Student'));
+  const [artistPreference, setArtistPreference] = useState('');
+  const [artistSuggestions, setArtistSuggestions] = useState([]);
+  const [artistStatus, setArtistStatus] = useState('idle');
+  const [genres, setGenres] = useState([]);
+  const [languagePreference, setLanguagePreference] = useState('Any');
+  const [songs, setSongs] = useState([]);
+  const [songStatus, setSongStatus] = useState('idle');
+  const [songQuery, setSongQuery] = useState('');
+  const [selectedSong, setSelectedSong] = useState(null);
+  const [profileId, setProfileId] = useState('lofi');
+  const [taskType, setTaskType] = useState('math');
+  const [gameVariant, setGameVariant] = useState('math-sort');
+  const [preMood, setPreMood] = useState(6);
+  const [postMood, setPostMood] = useState(6);
+  const [phase, setPhase] = useState('setup');
+  const [activeTrials, setActiveTrials] = useState(() => createTrials('math', 'math-sort'));
+  const [trialIndex, setTrialIndex] = useState(0);
+  const [iconMemorizing, setIconMemorizing] = useState(false);
+  const [answers, setAnswers] = useState([]);
+  const [currentAnswer, setCurrentAnswer] = useState('');
+  const [startedAt, setStartedAt] = useState(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [audioOn, setAudioOn] = useState(false);
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [latestSession, setLatestSession] = useState(null);
+  const [aiInsight, setAiInsight] = useState('');
+  const [aiStatus, setAiStatus] = useState('idle');
+  const [feedback, setFeedback] = useState('');
+  const [feedbackInsight, setFeedbackInsight] = useState('');
+  const [feedbackSongs, setFeedbackSongs] = useState([]);
+  const [feedbackTrackHistory, setFeedbackTrackHistory] = useState([]);
+  const [feedbackStatus, setFeedbackStatus] = useState('idle');
+  const songAudioRef = useRef(null);
+  const synthAudioRef = useRef(null);
+  const cardRef = useRef(null);
+
+  const selectedProfile = audioProfiles.find((profile) => profile.id === profileId);
+  const trials = activeTrials;
+  const userSessions = user ? sessions.filter((session) => !session.userEmail || session.userEmail === user.email) : [];
+  const correctAnswers = answers.filter((answer) => answer.correct).length;
+  const currentScore = getTimeAdjustedPercent(taskType, correctAnswers, answers.length, elapsed, gameVariant);
+  const suggestedQuery = useMemo(() => buildSearchTerm(role, quizAnswers, artistPreference, genres, languagePreference), [role, quizAnswers, artistPreference, genres, languagePreference]);
+  const [musicOptions, setMusicOptions] = useState(() => fallbackMusicOptions(role, quizAnswers, artistPreference, genres, languagePreference));
+  const [musicOptionsStatus, setMusicOptionsStatus] = useState('idle');
+  const isGameActive = phase === 'testing';
+
+  useEffect(() => localStorage.setItem(USER_KEY, JSON.stringify(user)), [user]);
+  useEffect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions)), [sessions]);
+
+  useEffect(() => {
+    if (phase === 'setup') setActiveTrials(createTrials(taskType, gameVariant));
+  }, [phase, taskType, gameVariant]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fallback = fallbackMusicOptions(role, quizAnswers, artistPreference, genres, languagePreference);
+    setMusicOptions(fallback);
+    setMusicOptionsStatus('loading');
+    const timeout = window.setTimeout(async () => {
+      const nextOptions = await generateGroqMusicOptions({ role, answers: quizAnswers, artistPreference, genres, languagePreference, taskType, preMood, previousSessions: userSessions });
+      if (!cancelled) {
+        setMusicOptions(nextOptions);
+        setMusicOptionsStatus('ready');
+      }
+    }, 220);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [role, quizAnswers, artistPreference, genres, languagePreference, taskType, preMood, userSessions.length]);
+
+useEffect(() => {
+    if (phase !== 'testing' || taskType !== 'icons' || gameVariant === 'icons-color-match' || gameVariant === 'icons-category-count') {
+      setIconMemorizing(false);
+      return undefined;
+    }
+    setIconMemorizing(true);
+    const timeout = window.setTimeout(() => setIconMemorizing(false), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [phase, taskType, gameVariant, trialIndex]);
+
+  useEffect(() => {
+    if (!startedAt || phase !== 'testing') return undefined;
+    const timer = window.setInterval(() => setElapsed(Math.floor((Date.now() - startedAt) / 1000)), 300);
+    return () => window.clearInterval(timer);
+  }, [phase, startedAt]);
+
+  useEffect(() => {
+    const { artist } = parseArtistPreference(artistPreference);
+    if (artist.length < 2 || isGameActive) {
+      setArtistSuggestions([]);
+      setArtistStatus('idle');
+      return undefined;
+    }
+    setArtistStatus('loading');
+    const timeout = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`https://itunes.apple.com/search?${new URLSearchParams({ term: artist, media: 'music', entity: 'musicArtist', limit: '6' })}`);
+        const data = await response.json();
+        setArtistSuggestions(data.results || []);
+        setArtistStatus(data.results?.length ? 'ready' : 'empty');
+      } catch {
+        setArtistSuggestions([]);
+        setArtistStatus('error');
+      }
+    }, 320);
+    return () => window.clearTimeout(timeout);
+  }, [artistPreference, isGameActive]);
+
+  useEffect(() => {
+    if (profileId === 'itunes') {
+      stopSynthAudio();
+      if (audioOn && selectedSong?.previewUrl) songAudioRef.current?.play().catch(() => setAudioOn(false));
+      else songAudioRef.current?.pause();
+      return undefined;
+    }
+    songAudioRef.current?.pause();
+    if (!audioOn) {
+      stopSynthAudio();
+      return undefined;
+    }
+    const context = new AudioContext();
+    const gain = context.createGain();
+    gain.gain.value = 0.035;
+    gain.connect(context.destination);
+    if (profileId === 'silence') {
+      synthAudioRef.current = { context };
+      return () => stopSynthAudio();
+    }
+    const osc = context.createOscillator();
+    const oscTwo = context.createOscillator();
+    const lfo = context.createOscillator();
+    const lfoGain = context.createGain();
+    osc.type = profileId === 'brown-noise' ? 'sawtooth' : 'sine';
+    osc.frequency.value = profileId === 'alpha' ? 220 : 110;
+    oscTwo.frequency.value = profileId === 'lofi' ? 165 : 118;
+    lfo.frequency.value = profileId === 'alpha' ? 10 : 1.2;
+    lfoGain.gain.value = 0.02;
+    lfo.connect(lfoGain);
+    lfoGain.connect(gain.gain);
+    osc.connect(gain);
+    oscTwo.connect(gain);
+    osc.start();
+    oscTwo.start();
+    lfo.start();
+    synthAudioRef.current = { context, nodes: [osc, oscTwo, lfo] };
+    return () => stopSynthAudio();
+  }, [audioOn, profileId, selectedSong]);
+
+  function stopSynthAudio() {
+    synthAudioRef.current?.nodes?.forEach((node) => {
+      try { node.stop(); } catch { /* already stopped */ }
+    });
+    synthAudioRef.current?.context?.close();
+    synthAudioRef.current = null;
+  }
+
+  function navigate(nextPage) {
+    setPage(nextPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goAuth(mode) {
+    setAuthMode(mode);
+    navigate(mode);
+  }
+
+  async function handleAuth(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const email = String(form.get('email') || '').toLowerCase();
+    const name = String(form.get('name') || email.split('@')[0]);
+    const password = String(form.get('password') || '');
+    const confirmPassword = String(form.get('confirmPassword') || '');
+    const acceptedLegal = form.get('acceptedLegal') === 'on';
+    const users = loadJSON(USERS_KEY, []);
+    if (!privacyAccepted) {
+      setAuthMessage('Please read and agree to the Privacy Policy popup before continuing.');
+      return;
+    }
+    if (!acceptedLegal) {
+      setAuthMessage('Please accept the Terms & Conditions and Privacy Policy to continue.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setAuthMessage('Invalid email address.');
+      return;
+    }
+    if (password.length < 6) {
+      setAuthMessage('Password must be at least 6 characters.');
+      return;
+    }
+    if (authMode === 'signup') {
+      if (password !== confirmPassword) {
+        setAuthMessage('Passwords do not match.');
+        return;
+      }
+      if (users.some((item) => item.email === email)) {
+        setAuthMessage('An account already exists for that email. Please log in.');
+        return;
+      }
+      const nextUsers = [...users, { email, name, password }];
+      localStorage.setItem(USERS_KEY, JSON.stringify(nextUsers));
+      await sendAuthEmail({ type: 'registration', name, email });
+      await sendAdminAuthEmail({ type: 'registration', name, email });
+      setUser({ email, name });
+      setAuthMessage('Registration complete. You are signed in.');
+      navigate('focus');
+      return;
+    }
+    const found = users.find((item) => item.email === email);
+    if (!found) {
+      setAuthMessage('No account found for that email. Please sign up first.');
+      return;
+    }
+    if (found.password !== password) {
+      setAuthMessage('Incorrect password.');
+      return;
+    }
+    await sendAuthEmail({ type: 'login', name: found.name, email });
+    await sendAdminAuthEmail({ type: 'login', name: found.name, email });
+    setUser(found);
+    setAuthMessage('Logged in successfully.');
+    navigate('focus');
+  }
+
+  async function searchSongs(query = suggestedQuery, directQuery = false) {
+    setSongStatus('loading');
+    const originalQuery = String(query || suggestedQuery || '').trim();
+    setSongQuery(originalQuery);
+    try {
+      const aiQuery = directQuery
+        ? originalQuery
+        : await extractMusicSearchTerm(originalQuery, suggestedQuery, languagePreference);
+      const fallbackQuery = buildFallbackMusicKeywords(originalQuery, languagePreference) || suggestedQuery;
+      const languageTerm = languagePreference !== 'Any' ? `${languagePreference} music` : '';
+      const intentHints = getMusicIntentHints(originalQuery).join(' ');
+      const searchTerms = [...new Set([aiQuery, fallbackQuery, `${intentHints} ${languageTerm}`.trim(), `${aiQuery} instrumental`, `${languageTerm} focus`.trim()].filter(Boolean))];
+      let results = [];
+      let usedQuery = aiQuery;
+      for (const term of searchTerms) {
+        results = await fetchItunesSongs(term);
+        usedQuery = term;
+        if (results.length) break;
+      }
+      setSongs(results);
+      setSelectedSong(results[0] || null);
+      setProfileId('itunes');
+      setSongQuery(directQuery ? originalQuery : usedQuery);
+      setSongStatus(results.length ? 'ready' : 'empty');
+    } catch {
+      setSongStatus('error');
+    }
+  }
+
+  function startTest() {
+    if (!user) {
+      setLoginPrompt(true);
+      return;
+    }
+    setActiveTrials(createTrials(taskType, gameVariant));
+    setAnswers([]);
+    setTrialIndex(0);
+    setCurrentAnswer('');
+    setElapsed(0);
+    setStartedAt(Date.now());
+    setPhase('testing');
+    setAudioOn(profileId !== 'silence');
+    setAiInsight('');
+    setFeedback('');
+    setFeedbackInsight('');
+    setFeedbackSongs([]);
+  }
+
+ function recordAnswer(response) {
+    const trial = trials[trialIndex];
+    if (trial.intro) {
+      if (trialIndex + 1 >= trials.length) {
+        setAudioOn(false);
+        setPhase('post');
+        return;
+      }
+      setTrialIndex(trialIndex + 1);
+      return;
+    }
+    if (taskType === 'icons' && iconMemorizing) return;
+    const cleanResponse = String(response).trim();
+    const correct = cleanResponse.toLowerCase() === trial.a.toLowerCase();
+    const nextAnswers = [...answers, { response: cleanResponse, correct }];
+    setAnswers(nextAnswers);
+    setCurrentAnswer('');
+    if (trialIndex + 1 >= trials.length) {
+      setAudioOn(false);
+      setPhase('post');
+      return;
+    }
+    setTrialIndex(trialIndex + 1);
+  }
+
+  function submitAnswer(event) {
+    event.preventDefault();
+    recordAnswer(currentAnswer);
+  }
+
+  function saveSession() {
+    const correct = answers.filter((answer) => answer.correct).length;
+    const rawAccuracy = answers.length ? Math.round((correct / answers.length) * 100) : 0;
+    const session = {
+      id: crypto.randomUUID(),
+      date: new Date().toISOString(),
+      userEmail: user.email,
+      sessionLength: elapsed,
+      taskType,
+      taskName: taskGames[taskType].find((game) => game.id === gameVariant)?.name || taskTypes.find((task) => task.id === taskType).name,
+      taskCategory: taskTypes.find((task) => task.id === taskType).name,
+      gameVariant,
+      profileId,
+      soundUsed: selectedSong ? `${selectedSong.trackName} by ${selectedSong.artistName}` : selectedProfile.name,
+      role,
+      quizAnswers,
+      artistPreference,
+      genres,
+      languagePreference,
+      preMood,
+      postMood,
+      rawAccuracy,
+      accuracy: getTimeAdjustedPercent(taskType, correct, answers.length, elapsed, gameVariant),
+      averageSeconds: Math.max(1, elapsed / Math.max(1, answers.length)),
+      answers,
+    };
+    session.flowStates = getFlowStatesForSession(session);
+    setLatestSession(session);
+    setSessions([session, ...sessions]);
+    setPhase('results');
+    generateInsightForSession(session);
+    window.setTimeout(() => document.querySelector('.insight-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  }
+
+  async function generateInsightForSession(session) {
+    setAiStatus('loading');
+    const fallback = `Your ${session.taskName} score was ${session.accuracy}%. ${session.soundUsed} seems worth testing again, especially when your post-session mood is ${session.postMood}/10.`;
+    const insight = await callGroq([
+      { role: 'system', content: 'You are Neurobeats. Write one concise, encouraging, evidence-based focus insight from the completed session. Mention the user performance, sound used, task completed, score, and mood after the session.' },
+      { role: 'user', content: JSON.stringify(session) },
+    ], fallback);
+    setAiInsight(insight);
+    setSessions((currentSessions) => currentSessions.map((item) => item.id === session.id ? { ...item, aiInsight: insight } : item));
+    setLatestSession((currentSession) => currentSession?.id === session.id ? { ...currentSession, aiInsight: insight } : currentSession);
+    setAiStatus('ready');
+  }
+
+  async function generateInsight() {
+    if (!user) {
+      setLoginPrompt(true);
+      return;
+    }
+    if (!latestSession) return;
+    generateInsightForSession(latestSession);
+  }
+
+  async function submitFeedback() {
+    if (!latestSession || !feedback.trim()) return;
+    setFeedbackStatus('loading');
+    setFeedbackSongs([]);
+    const sentiment = getFeedbackSentiment(feedback);
+    const feedbackKeywords = getFeedbackKeywords(feedback);
+    const selectedArtist = selectedSong?.artistName || '';
+    const avoidArtist = sentiment === 'disliked' ? selectedArtist : '';
+    const alreadySeenIds = [...new Set([...songs, ...feedbackSongs, ...feedbackTrackHistory, selectedSong].filter(Boolean).map((song) => song.trackId))];
+    const fallbackQuery = buildFeedbackSearchFallback(feedback, latestSession);
+    try {
+      const aiQuery = await callGroq([
+        { role: 'system', content: 'Create a specific, varied iTunes music search query from the user feedback. Extract concrete preferences such as tempo, instruments, mood, energy, genre, language, and listening context from the feedback. Use the score and post-session mood as context. If disliked, move away from the current sound and artist. If liked, keep the useful qualities but introduce a different artist or subgenre. Never return a generic query like calm focus music. Return only 4 to 9 search keywords.' },
+        { role: 'user', content: JSON.stringify({ feedback, feedbackKeywords, sentiment, score: latestSession.accuracy, task: latestSession.taskName, moodAfter: latestSession.postMood, soundUsed: latestSession.soundUsed, genres: latestSession.genres, languagePreference: latestSession.languagePreference }) },
+      ], fallbackQuery);
+      const cleanedQuery = aiQuery.replace(/["`]/g, '').replace(/\s+/g, ' ').trim() || fallbackQuery;
+      const sessionLanguage = latestSession.languagePreference && latestSession.languagePreference !== 'Any' ? latestSession.languagePreference : '';
+      const variationTerms = ['piano', 'acoustic', 'ambient', 'jazz', 'soundtrack', 'downtempo'];
+      const variationIndex = (feedback.split('').reduce((sum, character) => sum + character.charCodeAt(0), 0) + feedbackTrackHistory.length) % variationTerms.length;
+      const variation = variationTerms[variationIndex];
+      const alternateQuery = sentiment === 'disliked' ? `${feedbackKeywords.join(' ')} ${sessionLanguage} ${variation} alternative focus` : `${cleanedQuery} ${variation} fresh variety`;
+      const searchTerms = [...new Set([cleanedQuery, `${feedbackKeywords.join(' ')} ${variation} music`, fallbackQuery, alternateQuery, `${cleanedQuery} focus playlist`].filter(Boolean))];
+      let freshSongs = [];
+      let usedFeedbackQuery = cleanedQuery;
+      for (const [index, term] of searchTerms.entries()) {
+        freshSongs = await fetchItunesSongs(term, { excludeTrackIds: alreadySeenIds, avoidArtist, offset: index * 12 });
+        usedFeedbackQuery = term;
+        if (freshSongs.length) break;
+      }
+      const fallback = sentiment === 'liked'
+        ? `You scored ${latestSession.accuracy}/100 and liked the sound, so I found similar tracks with some variety. Fresh iTunes search: ${usedFeedbackQuery}.`
+        : sentiment === 'disliked'
+          ? `You scored ${latestSession.accuracy}/100 and did not enjoy the sound, so I avoided that track/artist and searched for a calmer alternative: ${usedFeedbackQuery}.`
+          : `Your feedback was mixed, so I balanced your ${latestSession.accuracy}/100 score with a fresh focus search: ${usedFeedbackQuery}.`;
+      const analysis = await callGroq([
+        { role: 'system', content: 'Write a personalized Neurobeats feedback response in two short sentences. Mention how the feedback sentiment and score changed the next music recommendation. Do not repeat generic advice.' },
+        { role: 'user', content: JSON.stringify({ feedback, sentiment, latestSession, usedFeedbackQuery, freshSongCount: freshSongs.length }) },
+      ], fallback);
+      setFeedbackInsight(analysis);
+      setFeedbackSongs(freshSongs);
+      setFeedbackTrackHistory((currentHistory) => [...currentHistory, ...freshSongs].slice(-72));
+      if (freshSongs.length) {
+        setSongs(freshSongs);
+        setSelectedSong(freshSongs[0]);
+        setProfileId('itunes');
+        setSongQuery(usedFeedbackQuery);
+        setSongStatus('ready');
+      } else {
+        setSongStatus('empty');
+      }
+      setFeedbackStatus('ready');
+    } catch {
+      setFeedbackInsight('I could not fetch fresh recommendations this time. Try adding a little more detail about what felt good or distracting.');
+      setSongStatus('error');
+      setFeedbackStatus('ready');
+    }
+  }
+
+  async function downloadCard() {
+    if (!cardRef.current) return;
+    const canvas = await html2canvas(cardRef.current, { backgroundColor: '#fffaf0', scale: 2 });
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = 'neurobeats-ai-insight.png';
+    link.click();
+  }
+
+  function shareCard(platform) {
+    const text = latestSession ? getShareText(latestSession, aiInsight) : '';
+    const url = encodeURIComponent(window.location.href);
+    const encoded = encodeURIComponent(text);
+    if (platform === 'native' && navigator.share) {
+      navigator.share({ title: 'Neurobeats AI Insight', text, url: window.location.href });
+      return;
+    }
+    const links = {
+      twitter: `https://twitter.com/intent/tweet?text=${encoded}&url=${url}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      whatsapp: `https://wa.me/?text=${encoded}%20${url}`,
+    };
+    window.open(links[platform], '_blank', 'noopener,noreferrer');
+  }
+
+  function shareSession(session) {
+    const text = getShareText(session, session.aiInsight || '');
+    if (navigator.share) {
+      navigator.share({ title: 'Neurobeats Session', text, url: window.location.href });
+      return;
+    }
+    navigator.clipboard?.writeText(text);
+  }
+
+  function deleteSessions(ids) {
+    const selectedIds = new Set(ids);
+    setSessions(sessions.filter((session) => !selectedIds.has(session.id)));
+    if (latestSession && selectedIds.has(latestSession.id)) setLatestSession(null);
+  }
+
+  function openSession(session) {
+    setLatestSession(session);
+    setAiInsight(session.aiInsight || '');
+    setAiStatus(session.aiInsight ? 'ready' : 'idle');
+    setPhase('results');
+    navigate('focus');
+    window.setTimeout(() => document.querySelector('.insight-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  }
+
+  function seekAudio(value) {
+    const nextTime = Number(value);
+    if (!songAudioRef.current || Number.isNaN(nextTime)) return;
+    songAudioRef.current.currentTime = nextTime;
+    setAudioCurrentTime(nextTime);
+  }
+
+  const pageContent = {
+    home: <HomePage navigate={navigate} />,
+    features: <FeaturesPage navigate={navigate} />,
+    how: <HowItWorksPage navigate={navigate} />,
+    about: <AboutPage />,
+    contact: <ContactPage />,
+    privacy: <PrivacyPolicyPage />,
+    terms: <TermsPage />,
+    history: <HistoryPage user={user} sessions={userSessions} goAuth={goAuth} navigate={navigate} shareSession={shareSession} deleteSessions={deleteSessions} openSession={openSession} />,
+    focus: (
+      <FocusPage
+        role={role}
+        setRole={setRole}
+        quizAnswers={quizAnswers}
+        setQuizAnswers={setQuizAnswers}
+        artistPreference={artistPreference}
+        setArtistPreference={setArtistPreference}
+        artistSuggestions={artistSuggestions}
+        artistStatus={artistStatus}
+        setArtistSuggestions={setArtistSuggestions}
+        genres={genres}
+        setGenres={setGenres}
+        languagePreference={languagePreference}
+        setLanguagePreference={setLanguagePreference}
+        musicOptions={musicOptions}
+        musicOptionsStatus={musicOptionsStatus}
+        suggestedQuery={suggestedQuery}
+        searchSongs={searchSongs}
+        songQuery={songQuery}
+        setSongQuery={setSongQuery}
+        songs={songs}
+        songStatus={songStatus}
+        selectedSong={selectedSong}
+        setSelectedSong={setSelectedSong}
+        audioOn={audioOn}
+        setAudioOn={setAudioOn}
+        audioCurrentTime={audioCurrentTime}
+        audioDuration={audioDuration}
+        seekAudio={seekAudio}
+        profileId={profileId}
+        setProfileId={setProfileId}
+        selectedProfile={selectedProfile}
+        taskType={taskType}
+        setTaskType={setTaskType}
+        gameVariant={gameVariant}
+        setGameVariant={setGameVariant}
+        preMood={preMood}
+        setPreMood={setPreMood}
+        postMood={postMood}
+        setPostMood={setPostMood}
+        phase={phase}
+        trials={trials}
+        trialIndex={trialIndex}
+        elapsed={elapsed}
+        currentAnswer={currentAnswer}
+        setCurrentAnswer={setCurrentAnswer}
+        submitAnswer={submitAnswer}
+        submitIconAnswer={recordAnswer}
+        iconMemorizing={iconMemorizing}
+        startTest={startTest}
+        saveSession={saveSession}
+        latestSession={latestSession}
+        sessions={userSessions}
+        currentScore={currentScore}
+        isGameActive={isGameActive}
+        generateInsight={generateInsight}
+        aiInsight={aiInsight}
+        aiStatus={aiStatus}
+        user={user}
+        cardRef={cardRef}
+        shareCard={shareCard}
+        downloadCard={downloadCard}
+        feedback={feedback}
+        setFeedback={setFeedback}
+        feedbackInsight={feedbackInsight}
+        feedbackSongs={feedbackSongs}
+        feedbackStatus={feedbackStatus}
+        submitFeedback={submitFeedback}
+        setSelectedSong={setSelectedSong}
+        setProfileId={setProfileId}
+        setAudioOn={setAudioOn}
+      />
+    ),
+    results: <ResultsPage sessions={userSessions} navigate={navigate} />,
+    feedback: <FeedbackPage navigate={navigate} />,
+    login: <AuthView mode="login" setMode={goAuth} navigate={navigate} onSubmit={handleAuth} message={authMessage} />,
+    signup: <AuthView mode="signup" setMode={goAuth} navigate={navigate} onSubmit={handleAuth} message={authMessage} />,
+  };
+
+  return (
+    <main className="site-shell">
+      <Nav page={page} navigate={navigate} goAuth={goAuth} user={user} setUser={setUser} />
+      {pageContent[page] || pageContent.home}
+      <Footer navigate={navigate} />
+      <audio
+        ref={songAudioRef}
+        src={selectedSong?.previewUrl || ''}
+        loop
+        onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
+        onTimeUpdate={(event) => setAudioCurrentTime(event.currentTarget.currentTime || 0)}
+        onEnded={() => setAudioOn(false)}
+      />
+      {loginPrompt ? <LoginModal close={() => setLoginPrompt(false)} goAuth={goAuth} /> : null}
+      {!user && !privacyAccepted && ['login', 'signup'].includes(page) ? (
+        <PrivacyGateModal
+          scrolled={privacyScrolled}
+          checked={privacyChecked}
+          setChecked={setPrivacyChecked}
+          onScrollComplete={() => setPrivacyScrolled(true)}
+          onAgree={() => {
+            localStorage.setItem(PRIVACY_ACCEPTED_KEY, 'true');
+            setPrivacyAccepted(true);
+            setAuthMessage('');
+          }}
+        />
+      ) : null}
+    </main>
+  );
+}
+
+function Nav({ page, navigate, goAuth, user, setUser }) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef(null);
+  const isMoreActive = moreNavItems.some(([id]) => id === page);
+
+  useEffect(() => {
+    if (!moreOpen) return undefined;
+    function handleClickOutside(event) {
+      if (moreRef.current && !moreRef.current.contains(event.target)) setMoreOpen(false);
+    }
+    function handleEscape(event) {
+      if (event.key === 'Escape') setMoreOpen(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [moreOpen]);
+
+  function goTo(id) {
+    setMoreOpen(false);
+    navigate(id);
+  }
+
+  return (
+    <nav className="top-nav">
+      <button className="brand" onClick={() => navigate('home')}><span className="brand-mark"><Brain size={22} /></span><span>Neurobeats</span></button>
+      <div className="nav-links">
+        {primaryNavItems.map(([id, label]) => <button key={id} className={page === id ? 'active' : ''} onClick={() => navigate(id)}>{label}</button>)}
+        <div className="nav-more" ref={moreRef}>
+          <button
+            className={`nav-more-trigger ${isMoreActive ? 'active' : ''}`}
+            onClick={() => setMoreOpen((value) => !value)}
+            aria-haspopup="true"
+            aria-expanded={moreOpen}
+          >
+            More <ChevronDown size={15} className={moreOpen ? 'nav-more-caret open' : 'nav-more-caret'} />
+          </button>
+          {moreOpen ? (
+            <div className="nav-more-menu" role="menu">
+              {moreNavItems.map(([id, label]) => (
+                <button key={id} className={page === id ? 'active' : ''} onClick={() => goTo(id)} role="menuitem">
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+      <div className="auth-actions">
+        {user ? <button className="user-pill" onClick={() => setUser(null)}>{user.name} · Logout</button> : (
+          <>
+            <button onClick={() => goAuth('login')}><LogIn size={16} /> Login</button>
+            <button onClick={() => goAuth('signup')}><UserPlus size={16} /> Sign Up</button>
+          </>
+        )}
+      </div>
+    </nav>
+  );
+}
+function HomePage({ navigate }) {
+  return (
+    <section className="landing">
+      <div className="hero-copy">
+        <span className="eyebrow"><Sparkles size={16} /> Personalized sound science</span>
+        <h1>Neurobeats</h1>
+        <p>Neurobeats tests how music, mood, and task performance interact, then turns your results into personalized focus recommendations.</p>
+        <button className="primary-action" onClick={() => navigate('focus')}><Play size={18} /> Focus Test</button>
+      </div>
+      <div className="landing-panel">
+        <h2>What you get</h2>
+        <p>Role-aware questions, iTunes previews, timed testing, AI insight cards, feedback analysis, and evidence-backed music choices.</p>
+      </div>
+      <div className="landing-band">
+        <Metric label="Features" value="AI + iTunes" />
+        <Metric label="Working" value="Test → Mood → Insight" />
+        <Metric label="Owner" value="Samarth" />
+      </div>
+      <div className="home-section">
+        <span className="eyebrow"><Check size={16} /> Features</span>
+        <h2>Built for personal focus experiments</h2>
+        <div className="home-card-grid">
+          <article><Headphones size={24} /><h3>Audio personalization</h3><p>Choose role, genre, language or region, artist, and natural-language prompts for better music matches.</p></article>
+          <article><Target size={24} /><h3>Timed focus games</h3><p>Play math, memory recall, and missing-icon memory tasks while the selected sound runs in the background.</p></article>
+          <article><WandSparkles size={24} /><h3>AI focus receipts</h3><p>After each session, Groq turns score, time, mood, and sound into a shareable insight card.</p></article>
+        </div>
+      </div>
+      <div className="home-section home-steps">
+        <span className="eyebrow"><Activity size={16} /> How It Works</span>
+        <h2>From music choice to measurable insight</h2>
+        <div className="step-grid">
+          <article><strong>01</strong><h3>Personalize sound</h3><p>Answer quick role-based questions and optionally add artist, genre, or language preferences.</p></article>
+          <article><strong>02</strong><h3>Run the focus test</h3><p>Complete a timed task while the selected iTunes preview or focus sound plays without pausing.</p></article>
+          <article><strong>03</strong><h3>Save mood and results</h3><p>Record how you feel after the session so the recommendation learns from both performance and mood.</p></article>
+          <article><strong>04</strong><h3>Review history</h3><p>Open, share, or delete saved sessions from History when you are logged in.</p></article>
+        </div>
+      </div>
+      <div className="home-section about-strip">
+        <AboutStory />
+      </div>
+      <div className="testimonial">“Neurobeats made focus feel measurable instead of random.”</div>
+    </section>
+  );
+}
+
+function InfoPage({ title, items }) {
+  return (
+    <section className="content-page">
+      <h1>{title}</h1>
+      <div className="info-grid">{items.map((item) => <article key={item}><Check size={22} /><p>{item}</p></article>)}</div>
+    </section>
+  );
+}
+
+const featureDetails = [
+  {
+    title: 'AI Music Recommendations',
+    summary: 'Find sound that fits your mood, role, task, and listening preferences.',
+    detail: 'Answer a few optional questions or describe what you need in your own words. Groq identifies useful moods, genres, artists, languages, and search terms, then iTunes returns fresh track recommendations with playback controls.',
+    points: ['Natural-language music prompts', 'Optional artist, genre, and language filters', 'Fresh iTunes results with audio playback'],
+    icon: Headphones,
+  },
+  {
+    title: 'Focus & Memory Tests',
+    summary: 'Measure attention with short, timed challenges designed for real sessions.',
+    detail: 'Choose from Memory Recall, Mental Math, and Missing Icon Memory. Each task records accuracy and time taken, and the score adjusts when a user takes longer to complete the challenge.',
+    points: ['Memory keyword recall', 'Timed math and symbol tasks', 'Speed-adjusted performance scores'],
+    icon: Brain,
+  },
+  {
+    title: 'Mood Tracking',
+    summary: 'Capture how you feel before and after listening and completing a task.',
+    detail: 'Mood ratings give performance context that a score alone cannot provide. Comparing pre-session and post-session mood helps reveal which sound environments feel supportive for you.',
+    points: ['Pre-session mood check-in', 'Post-session mood recording', 'Mood context included in your insight'],
+    icon: Activity,
+  },
+  {
+    title: 'AI Performance Insights',
+    summary: 'Turn your score, timing, mood, and sound into a personal focus receipt.',
+    detail: 'After a completed session, Groq analyzes the session data and generates an insight that explains your performance in plain language. The result appears only after the game is finished and is available to logged-in users.',
+    points: ['Score and timing analysis', 'Personalized focus observations', 'Session-specific AI insight generation'],
+    icon: Sparkles,
+  },
+  {
+    title: 'Personalized Study Sessions',
+    summary: 'Build a repeatable focus routine around the way you work best.',
+    detail: 'Role-specific questions adapt the experience for students, teachers, employees, and other users. Your selected sound, task, preferences, and mood work together to make every session more relevant.',
+    points: ['Role-aware preference questions', 'Sound locked during active tests', 'A consistent session structure'],
+    icon: Target,
+  },
+  {
+    title: 'Shareable AI Insight Cards',
+    summary: 'Save and share a visual summary of your completed focus session.',
+    detail: 'Your insight card includes session length, sound used, task completion, score, mood, performance details, and the AI-generated observation. Download it as an image or share it through available platform options.',
+    points: ['Focus receipt-style summary', 'Download as an image', 'Share through supported platforms'],
+    icon: Share2,
+  },
+  {
+    title: 'Progress Analytics',
+    summary: 'Review previous sessions and learn how your focus changes over time.',
+    detail: 'The History page keeps your saved sessions together so you can compare scores, moods, task times, and sounds. Use those patterns to make better choices in future sessions.',
+    points: ['Session history for signed-in users', 'Compare score, mood, sound, and time', 'Share or delete saved sessions'],
+    icon: BarChart3,
+  },
+];
+
+function FeaturesPage({ navigate }) {
+  return (
+    <section className="content-page features-page">
+      <div className="features-hero">
+        <span className="eyebrow"><Sparkles size={16} /> Built around your focus</span>
+        <h1>Features</h1>
+        <p>Neurobeats combines music discovery, timed cognitive tasks, mood tracking, and AI feedback to help every user understand which sound supports their best work.</p>
+      </div>
+      <div className="feature-detail-grid">
+        {featureDetails.map(({ title, summary, detail, points, icon: Icon }, index) => (
+          <article className={`feature-detail-card ${index === 0 ? 'feature-detail-card-wide' : ''}`} key={title}>
+            <div className="feature-detail-icon"><Icon size={24} /></div>
+            <div className="feature-detail-copy">
+              <span>0{index + 1}</span>
+              <h2>{title}</h2>
+              <p className="feature-summary">{summary}</p>
+              <p>{detail}</p>
+              <ul>{points.map((point) => <li key={point}><Check size={15} /> {point}</li>)}</ul>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="features-cta">
+        <div><strong>Ready to test your sound?</strong><p>Start a session and build evidence around your own focus.</p></div>
+        <button className="primary-action" onClick={() => navigate('focus')}>Start Focus Test <ChevronRight size={17} /></button>
+      </div>
+    </section>
+  );
+}
+
+const workflowSteps = [
+  {
+    title: 'Register & Log In',
+    summary: 'Create an account or sign in before starting your focus journey.',
+    detail: 'Your account unlocks Focus Test access, session history, saved insight cards, and personalized recommendations across the browser session.',
+    icon: UserPlus,
+  },
+  {
+    title: 'Set Your Preferences',
+    summary: 'Choose mood, role, genre, language, artist, and other focus options.',
+    detail: 'Neurobeats asks quick role-specific questions so the music search can match your work style, energy level, preferred region, and focus goal.',
+    icon: SlidersHorizontal,
+  },
+  {
+    title: 'Get AI Music Recommendations',
+    summary: 'AI suggests music based on your answers and natural-language prompts.',
+    detail: 'Groq extracts useful moods, genres, artist hints, and keywords, then the app searches iTunes for fresh music recommendations.',
+    icon: WandSparkles,
+  },
+  {
+    title: 'Complete Focus Tasks',
+    summary: 'Play tasks like Memory Recall, Mental Math, or Missing Icon Memory.',
+    detail: 'The selected sound plays during the timed task. You cannot pause or switch tracks while the test is active, keeping every session fair.',
+    icon: Target,
+  },
+  {
+    title: 'View AI Insights',
+    summary: 'AI analyzes your score, time, task, sound, and mood.',
+    detail: 'After the session, Neurobeats creates a focus receipt with score, session length, flow timeline, mood, and a personalized AI insight.',
+    icon: BarChart3,
+  },
+  {
+    title: 'Share Your Insight Card',
+    summary: 'Download or share your AI Insight Card on social platforms.',
+    detail: 'Save the receipt as an image, share it through supported apps, or revisit past sessions from History when logged in.',
+    icon: Share2,
+  },
+];
+
+function HowItWorksPage({ navigate }) {
+  const [activeStep, setActiveStep] = useState(0);
+  const ActiveIcon = workflowSteps[activeStep].icon;
+
+  return (
+    <section className="content-page workflow-page">
+      <div className="workflow-hero">
+        <span className="eyebrow"><Activity size={16} /> Step-by-step workflow</span>
+        <h1>How It Works</h1>
+        <p>Follow a simple loop: sign in, personalize your sound, complete a focus task, then turn your performance into an AI insight card.</p>
+      </div>
+      <div className="workflow-shell">
+        <div className="workflow-steps" role="list" aria-label="Neurobeats workflow steps">
+          {workflowSteps.map((step, index) => {
+            const StepIcon = step.icon;
+            return (
+              <button
+                key={step.title}
+                type="button"
+                className={`workflow-step ${activeStep === index ? 'active' : ''}`}
+                onClick={() => setActiveStep(index)}
+                role="listitem"
+              >
+                <span className="workflow-number">{String(index + 1).padStart(2, '0')}</span>
+                <span className="workflow-icon"><StepIcon size={20} /></span>
+                <span><strong>{step.title}</strong><small>{step.summary}</small></span>
+              </button>
+            );
+          })}
+        </div>
+        <article className="workflow-detail">
+          <span className="workflow-detail-icon"><ActiveIcon size={34} /></span>
+          <p className="workflow-kicker">Step {activeStep + 1} of {workflowSteps.length}</p>
+          <h2>{workflowSteps[activeStep].title}</h2>
+          <p>{workflowSteps[activeStep].detail}</p>
+          <div className="workflow-progress">
+            {workflowSteps.map((step, index) => <button key={step.title} className={activeStep === index ? 'active' : ''} onClick={() => setActiveStep(index)} aria-label={`Show ${step.title}`} />)}
+          </div>
+          <button className="primary-action" onClick={() => navigate(activeStep === 0 ? 'signup' : 'focus')}>
+            {activeStep === 0 ? <UserPlus size={18} /> : <Play size={18} />}
+            {activeStep === 0 ? 'Create account' : 'Start Focus Test'}
+          </button>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function AboutPage() {
+  return <section className="content-page about-page"><AboutStory /></section>;
+}
+
+function AboutStory() {
+  return (
+    <div className="about-block">
+      <span className="eyebrow about-eyebrow">Founder</span>
+      <div className="about-story">
+        <div className="about-copy">
+          <h2>Samarth Nathani</h2>
+          <h3>How was this idea created?</h3>
+          <p>Neurobeats began with a simple question: why does the same music help one person focus, but distract another? Instead of guessing, the platform tests sound, task performance, time, and mood together.</p>
+          <p>The idea grew from everyday study sessions where focus felt inconsistent. Sometimes calm music helped, sometimes silence worked better, and sometimes a stronger rhythm made difficult tasks easier to start.</p>
+          <p>Neurobeats turns that experience into a measurable system: users choose music, complete short focus games, record mood, and receive personalized AI insights backed by their own session data.</p>
+          <div className="vision-card">
+            <strong>Vision:</strong>
+            <p>Build a platform where people discover their best focus sound through evidence, personalization, and repeated self-testing.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContactPage() {
+  return (
+    <section className="content-page">
+      <h1>Contact</h1>
+      <div className="contact-card"><Mail size={24} /><p>Email: <a href="mailto:neurobeats.work@gmail.com">neurobeats.work@gmail.com</a></p><p>Location: India</p></div>
+    </section>
+  );
+}
+
+function PrivacyPolicyPage() {
+  return (
+    <section className="content-page policy-page">
+      <span className="eyebrow"><Lock size={16} /> Privacy Policy</span>
+      <h1>Privacy Policy</h1>
+      <p>Last updated: July 23, 2026</p>
+      <div className="policy-grid">
+        <article>
+          <h2>1. What Neurobeats Collects</h2>
+          <p>Neurobeats may store your name, email, password for this demo login system, role selection, genre and language preferences, selected audio, focus-task answers, score, session length, mood ratings, AI insight text, and written feedback.</p>
+        </article>
+        <article>
+          <h2>2. Why This Data Is Used</h2>
+          <p>Your data is used to run focus tests, calculate performance, personalize music recommendations, generate AI insight cards, show session history, and improve future recommendations based on your feedback and score.</p>
+        </article>
+        <article>
+          <h2>3. Local Browser Storage</h2>
+          <p>Account and session history are stored in your browser using localStorage. This means your saved sessions stay on the same browser and device unless you clear browser data or delete sessions from History.</p>
+        </article>
+        <article>
+          <h2>4. Third-Party Services</h2>
+          <p>EmailJS may receive registration or login event details when configured. Groq may receive session details and feedback to create insights and recommendations. The iTunes API receives music search terms to return song previews.</p>
+        </article>
+        <article>
+          <h2>5. AI Insights And Feedback</h2>
+          <p>When you generate an AI insight or submit feedback, the app may send your score, task type, mood, sound used, preferences, and feedback text to Groq so it can produce a personalized response.</p>
+        </article>
+        <article>
+          <h2>6. Sharing And Downloads</h2>
+          <p>If you share an insight card or session, the shared content may include your task, score, session length, sound used, mood, and AI insight. Downloaded cards are saved by you as image files.</p>
+        </article>
+        <article>
+          <h2>7. Deleting Data</h2>
+          <p>You can delete individual sessions or selected sessions from the History page. You can also clear all locally stored Neurobeats data by clearing your browser site data.</p>
+        </article>
+        <article>
+          <h2>8. Contact</h2>
+          <p>For privacy questions, contact Neurobeats at <a href="mailto:neurobeats.work@gmail.com">neurobeats.work@gmail.com</a>. Location: India.</p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function TermsPage() {
+  return (
+    <section className="content-page policy-page">
+      <span className="eyebrow"><Check size={16} /> Terms and Conditions</span>
+      <h1>Terms and Conditions</h1>
+      <p>Last updated: July 23, 2026</p>
+      <div className="policy-grid">
+        <article>
+          <h2>1. Acceptance Of Terms</h2>
+          <p>By using Neurobeats, you agree to use the platform responsibly and follow these terms. If you do not agree, please do not use the website.</p>
+        </article>
+        <article>
+          <h2>2. Purpose Of Neurobeats</h2>
+          <p>Neurobeats is an experimental focus-testing platform. It provides music recommendations, timed tasks, mood tracking, feedback analysis, and AI-generated insights for personal use.</p>
+        </article>
+        <article>
+          <h2>3. Accounts</h2>
+          <p>Some features, including focus tests, history, and AI insight cards, require login or sign up. You are responsible for entering accurate account information and keeping your browser/device secure.</p>
+        </article>
+        <article>
+          <h2>4. AI Recommendations</h2>
+          <p>AI insights and music recommendations are generated from your session data and feedback. They are suggestions only and may not always be accurate, complete, or suitable for every person.</p>
+        </article>
+        <article>
+          <h2>5. Music And iTunes Previews</h2>
+          <p>Music results are provided through the iTunes API. Neurobeats does not own the songs, artwork, artist names, previews, or external music metadata returned by iTunes.</p>
+        </article>
+        <article>
+          <h2>6. User Feedback</h2>
+          <p>When you submit feedback, Neurobeats may use it with your score, mood, and sound choice to generate new recommendations. Please do not submit harmful, private, or inappropriate content.</p>
+        </article>
+        <article>
+          <h2>7. No Medical Or Academic Guarantee</h2>
+          <p>Neurobeats is not medical, psychological, or academic advice. It does not guarantee improved focus, grades, productivity, mood, or performance.</p>
+        </article>
+        <article>
+          <h2>8. Changes To The Service</h2>
+          <p>Neurobeats may be updated, changed, or temporarily unavailable at any time. Features may change as the platform improves.</p>
+        </article>
+        <article>
+          <h2>9. Limitation Of Liability</h2>
+          <p>Use Neurobeats at your own discretion. Neurobeats is not responsible for losses, decisions, or outcomes based on AI insights, recommendations, or session results.</p>
+        </article>
+        <article>
+          <h2>10. Contact</h2>
+          <p>For questions about these terms, contact Neurobeats at <a href="mailto:neurobeats.work@gmail.com">neurobeats.work@gmail.com</a>. Location: India.</p>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function AuthView({ mode, setMode, navigate, onSubmit, message }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const passwordType = showPassword ? 'text' : 'password';
+  const confirmPasswordType = showConfirmPassword ? 'text' : 'password';
+
+  return (
+    <section className="auth-view">
+      <div>
+        <span className="eyebrow"><Lock size={16} /> Neurobeats account</span>
+        <h1>{mode === 'login' ? 'Login' : 'Sign Up'}</h1>
+        <p>EmailJS sends the registration/login event when configured. Your session stays active in this browser.</p>
+      </div>
+      <form className="auth-card" onSubmit={onSubmit}>
+        {mode === 'signup' ? <input name="name" placeholder="Name" required /> : null}
+        <input name="email" type="email" placeholder="Email" required />
+        <label className="password-field">
+          <input name="password" type={passwordType} placeholder="Password" required minLength="6" />
+          <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
+            {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+          </button>
+        </label>
+        {mode === 'signup' ? (
+          <label className="password-field">
+            <input name="confirmPassword" type={confirmPasswordType} placeholder="Confirm password" required minLength="6" />
+            <button type="button" onClick={() => setShowConfirmPassword((value) => !value)} aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}>
+              {showConfirmPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+            </button>
+          </label>
+        ) : null}
+        <label className="legal-consent">
+          <input name="acceptedLegal" type="checkbox" />
+          <span>
+            I agree to the{' '}
+            <button type="button" onClick={() => navigate('terms')}>Terms & Conditions</button>
+            {' '}and{' '}
+            <button type="button" onClick={() => navigate('privacy')}>Privacy Policy</button>.
+          </span>
+        </label>
+        <button className="primary-action" type="submit">{mode === 'login' ? 'Login' : 'Sign Up'} <ChevronRight size={18} /></button>
+        <button className="text-action" type="button" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}>
+          {mode === 'login' ? 'Need an account? Sign up' : 'Already have an account? Login'}
+        </button>
+        {message ? <p className="form-message">{message}</p> : null}
+      </form>
+    </section>
+  );
+}
+
+function FocusPage(props) {
+  return (
+    <div className="focus-page">
+      <section className="hero focus-hero">
+        <div className="hero-copy">
+          <span className="eyebrow"><Headphones size={16} /> Focus Test</span>
+          <h1>Test your sound</h1>
+          <p>Choose music, complete a timed task, rate your mood, and generate a shareable AI Insight after the session.</p>
+        </div>
+        <FocusSignal profile={props.selectedProfile} audioOn={props.audioOn} song={props.selectedSong} />
+      </section>
+
+      <div className="focus-steps">
+        <FocusStepCard step="1" title="Pick your task" subtitle="Choose a category and a game mode" icon={Target}>
+          <TaskSelector {...props} />
+        </FocusStepCard>
+
+        <FocusStepCard step="2" title="Set your mood" subtitle="Helps Groq personalize your music" icon={Activity}>
+          <div className="mood-step">
+            <MoodSlider label="Before" value={props.preMood} onChange={props.setPreMood} />
+            {props.phase !== 'setup' ? <MoodSlider label="After" value={props.postMood} onChange={props.setPostMood} /> : null}
+          </div>
+        </FocusStepCard>
+
+        <FocusStepCard step="3" title="Choose your sound" subtitle="AI-personalized music, or pick a focus tone" icon={Headphones}>
+          <MusicPanel {...props} />
+        </FocusStepCard>
+      </div>
+
+      <FocusStepCard step="4" title="Run the test" subtitle="Sign in required — sound locks while the timer runs" icon={Clock3}>
+        <TaskPanel {...props} />
+      </FocusStepCard>
+
+      {props.phase === 'results' ? <InsightAndFeedback {...props} /> : null}
+    </div>
+  );
+}
+
+function FocusStepCard({ step, title, subtitle, icon: Icon, children }) {
+  return (
+    <section className="focus-step-card">
+      <header className="focus-step-header">
+        <span className="focus-step-number">{step}</span>
+        <div className="focus-step-icon"><Icon size={20} /></div>
+        <div>
+          <h2>{title}</h2>
+          <p>{subtitle}</p>
+        </div>
+      </header>
+      <div className="focus-step-body">{children}</div>
+    </section>
+  );
+}
+function TaskSelector({ taskType, setTaskType, gameVariant, setGameVariant, isGameActive }) {
+  const availableGames = taskGames[taskType] || [];
+  return <div className="task-selector"><div className="segmented">{taskTypes.map((task) => {
+    const Icon = task.icon;
+    return <button key={task.id} className={taskType === task.id ? 'active' : ''} onClick={() => { setTaskType(task.id); setGameVariant(taskGames[task.id]?.[0]?.id); }} disabled={isGameActive}><Icon size={17} /><span>{task.name}</span></button>;
+  })}</div><div className="game-choices"><strong>Choose a game</strong><div>{availableGames.map((game) => <button key={game.id} className={gameVariant === game.id ? 'selected' : ''} onClick={() => setGameVariant(game.id)} disabled={isGameActive}><span>{game.name}</span><small>{game.prompt}</small></button>)}</div></div></div>;
+}
+
+function MusicPanel(props) {
+  const [roleSearch, setRoleSearch] = useState(props.role);
+  const [showRoleSuggestions, setShowRoleSuggestions] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const visibleQuestions = [...(roleQuestions[props.role] || roleQuestions.Other), ...sharedQuestions];
+  const roleSuggestions = roleSearch.trim()
+    ? roleOptions.filter((role) => role.toLowerCase().includes(roleSearch.trim().toLowerCase()))
+    : roleOptions;
+
+  function updateRole(value) {
+    setRoleSearch(value);
+    props.setRole(value || 'Other');
+    if (roleOptions.includes(value)) props.setQuizAnswers(defaultAnswers(value));
+  }
+  function toggleGenre(genre) {
+    props.setGenres(props.genres.includes(genre) ? props.genres.filter((item) => item !== genre) : [...props.genres, genre]);
+  }
+  function toggleSong(song) {
+    if (props.isGameActive) return;
+    const same = props.selectedSong?.trackId === song.trackId;
+    props.setSelectedSong(song);
+    props.setProfileId('itunes');
+    props.setAudioOn(same ? !props.audioOn : true);
+  }
+
+  return (
+    <div className="sound-panel">
+      {props.isGameActive ? <div className="music-lock">⚠️ Sound is locked while the test is running.</div> : null}
+
+      <div className="music-subsection">
+        <h3 className="music-subsection-title">Who's this session for?</h3>
+        <p className="music-subsection-hint">Groq tailors the questions and music to this role.</p>
+        <div className="role-input-wrap">
+          <input
+            value={roleSearch}
+            onFocus={() => setShowRoleSuggestions(true)}
+            onBlur={() => window.setTimeout(() => setShowRoleSuggestions(false), 150)}
+            onChange={(event) => { updateRole(event.target.value); setShowRoleSuggestions(true); }}
+            placeholder="Student, Teacher, Employee..."
+            disabled={props.isGameActive}
+            aria-label="Select your role"
+          />
+          {showRoleSuggestions && roleSuggestions.length ? (
+            <div className="role-suggestions">
+              {roleSuggestions.map((role) => (
+                <button key={role} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => { updateRole(role); setShowRoleSuggestions(false); }}>{role}</button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="music-subsection">
+        <button className={`advanced-toggle ${showAdvanced ? 'open' : ''}`} type="button" onClick={() => setShowAdvanced((value) => !value)} disabled={props.isGameActive}>
+          <span><SlidersHorizontal size={17} /> More personalization <small>optional</small></span>
+          <ChevronRight size={17} />
+        </button>
+        {showAdvanced ? (
+          <div className="advanced-personalization">
+            {visibleQuestions.map(([id, question, options]) => (
+              <div className="quiz-question" key={id}>
+                <strong>{question}</strong>
+                <div className="choice-row">
+                  {options.map((option) => (
+                    <button key={option} className={props.quizAnswers[id] === option ? 'selected' : ''} onClick={() => props.setQuizAnswers({ ...props.quizAnswers, [id]: option })} disabled={props.isGameActive}>{option}</button>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <label className="artist-field">
+              <strong>Preferred artist <span>optional</span></strong>
+              <div className="artist-autocomplete">
+                <input value={props.artistPreference} onChange={(event) => props.setArtistPreference(event.target.value)} placeholder="e.g. FrankJavCee, or 'like Hans Zimmer for calm focus'" disabled={props.isGameActive} />
+                {props.artistStatus === 'loading' ? <div className="artist-menu"><span>Searching artists...</span></div> : null}
+                {props.artistSuggestions.length ? (
+                  <div className="artist-menu">
+                    {props.artistSuggestions.map((artist) => (
+                      <button key={artist.artistId} onClick={() => { props.setArtistPreference(artist.artistName); props.setArtistSuggestions([]); }}>{artist.artistName}</button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </label>
+
+            <div className="genre-field">
+              <strong>Preferred genres <span>optional</span></strong>
+              <div className="genre-row">
+                {genreOptions.map((genre) => (
+                  <button key={genre} className={props.genres.includes(genre) ? 'selected' : ''} onClick={() => toggleGenre(genre)} disabled={props.isGameActive}>{genre}</button>
+                ))}
+              </div>
+            </div>
+
+            <label className="language-field">
+              <strong>Language / Region <span>optional</span></strong>
+              <select value={props.languagePreference} onChange={(event) => props.setLanguagePreference(event.target.value)} disabled={props.isGameActive}>
+                {languageOptions.map((language) => <option key={language} value={language}>{language}</option>)}
+              </select>
+            </label>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="music-subsection">
+        <div className="ai-options-header">
+          <h3 className="music-subsection-title">AI music picks</h3>
+          <small>{props.musicOptionsStatus === 'loading' ? 'Groq is personalizing...' : 'Personalized for you'}</small>
+        </div>
+        <div className="option-stack">
+          {props.musicOptions.map((option) => (
+            <button key={`${option.title}-${option.searchTerm}`} className="music-option" onClick={() => props.searchSongs(option.searchTerm, true)} disabled={props.isGameActive}>
+              <span>{option.title}</span>
+              <small>{option.reason}</small>
+              <em>{option.searchTerm}</em>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="music-subsection">
+        <h3 className="music-subsection-title">Search iTunes</h3>
+        <div className="itunes-search">
+          <div className="search-line">
+            <Search size={18} />
+            <input value={props.songQuery} onChange={(event) => props.setSongQuery(event.target.value)} placeholder={props.suggestedQuery} disabled={props.isGameActive} />
+            <button onClick={() => props.searchSongs(props.songQuery || props.suggestedQuery)} disabled={props.isGameActive}>Find</button>
+          </div>
+          <small>{props.songStatus === 'loading' ? 'AI is extracting music keywords and searching iTunes...' : props.songStatus === 'ready' ? `Searched iTunes for: ${props.songQuery}` : `Suggested search: ${props.suggestedQuery}`}</small>
+        </div>
+      </div>
+
+      <div className="music-subsection">
+        <h3 className="music-subsection-title">Or pick a focus tone</h3>
+        <div className="profile-grid">
+          {audioProfiles.map((profile) => (
+            <button key={profile.id} className={`profile-card ${props.profileId === profile.id ? 'selected' : ''}`} onClick={() => props.setProfileId(profile.id)} disabled={props.isGameActive} style={{ '--profile-color': profile.color }}>
+              <div className="profile-topline"><span>{profile.name}</span>{props.profileId === profile.id ? <Check size={18} /> : null}</div>
+              <p>{profile.label}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {props.songs.length || props.songStatus === 'empty' ? (
+        <div className="music-subsection">
+          <h3 className="music-subsection-title">Search results</h3>
+          <div className="song-grid">
+            {props.songs.map((song) => (
+              <article key={song.trackId} className={`song-card ${props.selectedSong?.trackId === song.trackId ? 'selected' : ''}`}>
+                <img src={song.artworkUrl100} alt="" />
+                <button className="song-select" onClick={() => { props.setSelectedSong(song); props.setProfileId('itunes'); }} disabled={props.isGameActive}>
+                  <span>{song.trackName}</span>
+                  <small>{song.artistName}</small>
+                </button>
+                <button className="song-play" onClick={() => toggleSong(song)} disabled={props.isGameActive}>
+                  {props.selectedSong?.trackId === song.trackId && props.audioOn ? <Pause size={16} /> : <Play size={16} />}
+                </button>
+              </article>
+            ))}
+            {props.songStatus === 'empty' ? <p className="muted">No preview tracks found. Try another artist, genre, or search term.</p> : null}
+          </div>
+        </div>
+      ) : null}
+
+      {props.selectedSong ? <SongTimeline {...props} /> : null}
+    </div>
+  );
+}
+
+function SongTimeline({ selectedSong, audioOn, setAudioOn, audioCurrentTime, audioDuration, seekAudio, isGameActive }) {
+  const duration = Number.isFinite(audioDuration) && audioDuration > 0 ? audioDuration : 30;
+  return (
+    <div className="song-timeline">
+      <div className="timeline-title">
+        <strong>{selectedSong.trackName}</strong>
+        <span>iTunes preview clip</span>
+      </div>
+      <button className="song-play large" onClick={() => setAudioOn(!audioOn)} disabled={isGameActive}>
+        {audioOn ? <Pause size={17} /> : <Play size={17} />}
+      </button>
+      <span className="time-label">{formatClock(audioCurrentTime)}</span>
+      <input
+        type="range"
+        min="0"
+        max={duration}
+        step="0.1"
+        value={Math.min(audioCurrentTime, duration)}
+        onChange={(event) => seekAudio(event.target.value)}
+        disabled={isGameActive}
+      />
+      <span className="time-label">{formatClock(duration)}</span>
+    </div>
+  );
+}
+
+function TaskPanel(props) {
+  const trial = props.trials[props.trialIndex];
+  return (
+    <div className="task-panel">
+      <div className="section-heading"><Clock3 size={22} /><div><h2>Timed Focus Task</h2><p>{props.phase === 'testing' ? 'Answer quickly and accurately.' : 'Configure your audio and begin when ready.'}</p></div></div>
+      {props.phase === 'setup' ? <EmptyTask {...props} /> : null}
+    {props.phase === 'testing' && props.taskType === 'icons' && props.gameVariant !== 'icons-color-match' && props.gameVariant !== 'icons-category-count' ? (
+        <div className="test-card icon-test-card">
+          <div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div>
+          <IconMemoryGame trial={trial} memorizing={props.iconMemorizing} submitIconAnswer={props.submitIconAnswer} />
+        </div>
+      ) : null}
+      {props.phase === 'testing' && props.taskType === 'icons' && props.gameVariant === 'icons-color-match' && trial.stream ? (
+        <div className="test-card icon-color-test-card">
+          <IconColorStreamCard trial={trial} onDone={props.submitIconAnswer} />
+        </div>
+      ) : null}
+      {props.phase === 'testing' && props.taskType === 'icons' && props.gameVariant === 'icons-color-match' && (trial.mode === 'color-recall' || trial.mode === 'icon-recall') ? (
+        <div className="test-card icon-color-test-card">
+          <div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div>
+          <IconColorQuestionGame trial={trial} recordAnswer={props.submitIconAnswer} />
+        </div>
+      ) : null}
+
+      {props.phase === 'testing' && props.taskType === 'icons' && props.gameVariant === 'icons-category-count' && trial.gridView ? (
+  <div className="test-card category-grid-test-card">
+    <IconCategoryGridView trial={trial} onDone={props.submitIconAnswer} />
+  </div>
+) : null}
+{props.phase === 'testing' && props.taskType === 'icons' && props.gameVariant === 'icons-category-count' && trial.mode === 'visual-gist' ? (
+  <div className="test-card category-grid-test-card">
+    <div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div>
+    <VisualGistQuestionGame trial={trial} recordAnswer={props.submitIconAnswer} />
+  </div>
+) : null}
+      {props.phase === 'testing' && props.taskType === 'math' && props.gameVariant === 'math-sort' ? <div className="test-card speed-sort-card"><div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div><SortGame trial={trial} recordAnswer={props.submitIconAnswer} /></div> : null}
+      {props.phase === 'testing' && props.taskType === 'memory' && props.gameVariant === 'memory-category-sort' && trial.stream ? (
+  <div className="test-card stream-test-card">
+    <StreamWordCard trial={trial} onDone={props.submitIconAnswer} />
+  </div>
+) : null}
+{props.phase === 'testing' && props.taskType === 'memory' && props.gameVariant === 'memory-category-sort' && trial.mode === 'gist' ? (
+  <div className="test-card gist-test-card">
+    <div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div>
+    <GistQuestionGame trial={trial} recordAnswer={props.submitIconAnswer} />
+  </div>
+) : null}
+{props.phase === 'testing' && props.taskType === 'memory' && props.gameVariant === 'memory-spatial' && trial.stream ? (
+  <div className="test-card spatial-test-card">
+    <SpatialWordCard trial={trial} onDone={props.submitIconAnswer} />
+  </div>
+) : null}
+{props.phase === 'testing' && props.taskType === 'memory' && props.gameVariant === 'memory-spatial' && trial.mode === 'spatial-locate' ? (
+  <div className="test-card spatial-test-card">
+    <div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div>
+    <SpatialLocateGame trial={trial} recordAnswer={props.submitIconAnswer} />
+  </div>
+) : null}
+{props.phase === 'testing' && props.taskType === 'memory' && props.gameVariant === 'memory-spatial' && trial.mode === 'spatial-recall' ? (
+  <div className="test-card spatial-test-card">
+    <div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div>
+    <SpatialRecallGame trial={trial} recordAnswer={props.submitIconAnswer} />
+  </div>
+) : null}
+      {props.phase === 'testing' && props.taskType !== 'icons' && trial.mode === 'choice' ? <div className="test-card"><div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div><ChoiceGame trial={trial} submitAnswer={props.submitAnswer} recordAnswer={props.submitIconAnswer} /></div> : null}
+      {props.phase === 'testing' && props.taskType === 'math' && props.gameVariant === 'math-bonds' ? <div className="test-card bond-test-card"><div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div><BondGame trial={trial} recordAnswer={props.submitIconAnswer} /></div> : null}
+      {props.phase === 'testing' && props.taskType !== 'icons' && !(props.taskType === 'math' && ['math-sort', 'math-bonds'].includes(props.gameVariant)) && props.gameVariant !== 'memory-category-sort' && props.gameVariant !== 'memory-spatial' && trial.mode !== 'choice' ? <form className="test-card" onSubmit={props.submitAnswer}><div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div>{props.taskType === 'memory' ? <div className="memory-prompt"><span>{trial.intro ? 'First keyword' : 'New keyword'}</span><strong>{trial.q}</strong><p>{trial.intro ? 'Remember this keyword. On the next screen, type this previous keyword.' : 'Type the previous keyword, not the one shown above.'}</p></div> : <h3>{trial.q}</h3>}{props.taskType === 'memory' && trial.intro ? null : <input autoFocus value={props.currentAnswer} onChange={(event) => props.setCurrentAnswer(event.target.value)} placeholder={props.taskType === 'memory' ? 'Previous keyword' : 'Answer'} />}<button className="primary-action" type="submit">{props.taskType === 'memory' && trial.intro ? 'Start recall' : 'Submit'} <ChevronRight size={18} /></button></form> : null}
+      {props.phase === 'post' ? <div className="test-card"><div className="score-orb">{props.currentScore}%</div><h3>Post-session mood</h3><p>This score includes accuracy and a time penalty. Record your current mood before saving.</p><MoodSlider label="After" value={props.postMood} onChange={props.setPostMood} /><button className="primary-action" onClick={props.saveSession}>Save result <BarChart3 size={18} /></button></div> : null}
+      {props.phase === 'results' && props.latestSession ? <div className="test-card results-card"><div className="score-row"><Metric label="Score" value={`${props.latestSession.accuracy}%`} /><Metric label="Session" value={formatSeconds(props.latestSession.sessionLength)} /><Metric label="Mood" value={`${props.latestSession.postMood}/10`} /></div><h3>Session complete</h3><p>Generate a logged-in AI Insight card or share feedback below.</p><button className="secondary-action" onClick={props.startTest}><RefreshCw size={18} /> Run another test</button></div> : null}
+    </div>
+  );
+}
+
+function ChoiceGame({ trial, recordAnswer }) {
+  return <div className="choice-game"><h3>{trial.q}</h3><p className="muted">Choose the best answer.</p><div className="choice-game-options">{trial.options.map((option) => <button key={option} type="button" onClick={() => recordAnswer(option)}>{option}</button>)}</div></div>;
+}
+
+function SortGame({ trial, recordAnswer }) {
+  const touchStart = useRef(null);
+  function choose(value) {
+    recordAnswer(value);
+  }
+  function handleTouchStart(event) {
+    touchStart.current = event.changedTouches[0].clientX;
+  }
+  function handleTouchEnd(event) {
+    if (touchStart.current === null) return;
+    const distance = event.changedTouches[0].clientX - touchStart.current;
+    touchStart.current = null;
+    if (Math.abs(distance) > 45) choose(distance < 0 ? 'even' : 'odd');
+  }
+  return <div className="sort-game" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}><span className="sort-instruction">Solve mentally, then tap or swipe</span><div className="sort-equation">{trial.q}</div><div className="sort-zones"><button className="sort-zone even" type="button" onClick={() => choose('even')}><strong>EVEN</strong><small>Tap or swipe left</small></button><button className="sort-zone odd" type="button" onClick={() => choose('odd')}><strong>ODD</strong><small>Tap or swipe right</small></button></div></div>;
+}
+
+function BondGame({ trial, recordAnswer }) {
+  return <div className="bond-game"><span className="sort-instruction">Target sum</span><div className="bond-target">100</div><p className="muted">Does <strong>{trial.q}</strong> pair with a number you have already seen to make 100?</p><div className="bond-actions"><button className="bond-action pair" type="button" onClick={() => recordAnswer('pair')}><strong>PAIR</strong><small>Tap if its complement was seen</small></button><button className="bond-action skip" type="button" onClick={() => recordAnswer('skip')}><strong>SKIP</strong><small>Tap if no pair exists yet</small></button></div></div>;
+}
+
+function IconMemoryGame({ trial, memorizing, submitIconAnswer }) {
+  return (
+    <div className="icon-memory-game">
+      <div className={`icon-game-status ${memorizing ? 'memorize' : 'recall'}`}>
+        <Clock3 size={18} />
+        <strong>{memorizing ? 'Memorize this visual challenge for 5 seconds' : trial.mode === 'position' ? 'Which cell held the target icon?' : trial.mode === 'odd' ? 'Find the odd icon' : 'Find the missing icon'}</strong>
+      </div>
+      <div className="icon-grid" aria-label="Icon memory grid">
+        {trial.grid.map((item, index) => {
+          const hidden = !memorizing && trial.mode === 'missing' && index === trial.missingIndex;
+          return <div key={`${item.icon}-${index}`} className={`icon-cell ${hidden ? 'missing' : ''}`}>{hidden ? '?' : item.icon}</div>;
+        })}
+      </div>
+      <p className="muted">{memorizing ? 'Remember the icons and their positions.' : trial.mode === 'position' ? `Target icon: ${trial.target.icon}` : trial.mode === 'odd' ? 'Which icon is different from the rest?' : 'Which icon disappeared from the grid?'}</p>
+      {!memorizing ? (
+        <div className="missing-options">
+          {trial.options.map((option) => <button key={option.icon || option} type="button" onClick={() => submitIconAnswer(option.icon || option)} aria-label={option.label || `Cell ${option}`}>{trial.mode === 'position' ? `Cell ${option}` : option.icon}</button>)}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+
+function IconColorStreamCard({ trial, onDone }) {
+  useEffect(() => {
+    const timeout = window.setTimeout(() => onDone('seen'), 1400);
+    return () => window.clearTimeout(timeout);
+  }, [trial.q]);
+
+  return (
+    <div className="icon-color-stream">
+      <div className="stream-progress">
+        {Array.from({ length: trial.streamTotal }).map((_, index) => (
+          <span key={index} className={index < trial.streamIndex ? 'seen' : ''} />
+        ))}
+      </div>
+      <div className="icon-color-card" style={{ '--pair-color': trial.color.hex }}>
+        <span className="icon-color-swatch-label">{trial.color.name}</span>
+        <span className="icon-color-emoji">{trial.icon}</span>
+      </div>
+      <p className="stream-hint">Remember which color each icon was paired with.</p>
+    </div>
+  );
+}
+
+function IconColorQuestionGame({ trial, recordAnswer }) {
+  if (trial.mode === 'color-recall') {
+    return (
+      <div className="icon-color-question">
+        <span className="gist-type-badge"><Eye size={15} /> Color match</span>
+        <div className="icon-color-prompt-emoji">{trial.icon}</div>
+        <h3>{trial.q}</h3>
+        <div className="color-options">
+          {trial.options.map((option) => (
+            <button key={option.name} type="button" className="color-option" style={{ '--pair-color': option.hex }} onClick={() => recordAnswer(option.name)}>
+              <span className="color-swatch" />
+              <span>{option.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="icon-color-question">
+      <span className="gist-type-badge"><Brain size={15} /> Icon match</span>
+      <div className="icon-color-prompt-swatch" style={{ '--pair-color': trial.color.hex }}>
+        <span>{trial.color.name}</span>
+      </div>
+      <h3>{trial.q}</h3>
+      <div className="gist-options">
+        {trial.options.map((option) => (
+          <button key={option} type="button" className="gist-option icon-option" onClick={() => recordAnswer(option)}>{option}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IconCategoryGridView({ trial, onDone }) {
+  const [remaining, setRemaining] = useState(trial.viewSeconds);
+
+  useEffect(() => {
+    setRemaining(trial.viewSeconds);
+    const interval = window.setInterval(() => setRemaining((value) => Math.max(0, value - 1)), 1000);
+    const timeout = window.setTimeout(() => onDone('seen'), trial.viewSeconds * 1000);
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+    };
+  }, [trial.q]);
+
+  const categoryClass = { animal: 'cat-animal', food: 'cat-food', tech: 'cat-tech' };
+
+  return (
+    <div className="category-grid-view">
+      <div className="category-grid-header">
+        <span className="category-grid-title">Memorize the grid</span>
+        <span className="category-grid-timer">{remaining}s</span>
+      </div>
+      <div className="category-icon-grid">
+        {trial.grid.map((item, index) => (
+          <div key={`${item.icon}-${index}`} className={`category-icon-cell ${categoryClass[item.category] || ''}`}>
+            <span>{item.icon}</span>
+          </div>
+        ))}
+      </div>
+      <p className="stream-hint">Notice categories and counts — you'll be asked about the gist, not exact positions.</p>
+    </div>
+  );
+}
+
+function VisualGistQuestionGame({ trial, recordAnswer }) {
+  const typeMeta = {
+    seen: { icon: Eye, label: 'Recognition' },
+    count: { icon: BarChart3, label: 'Count' },
+    oddOne: { icon: Search, label: 'Spot the outsider' },
+  };
+  const meta = typeMeta[trial.gistType] || typeMeta.seen;
+  const Icon = meta.icon;
+
+  if (trial.gistType === 'seen') {
+    return (
+      <div className="gist-question visual-gist-question">
+        <span className="gist-type-badge"><Icon size={15} /> {meta.label}</span>
+        <div className="visual-gist-prompt-icon">{trial.promptIcon}</div>
+        <h3>{trial.q}</h3>
+        <div className="gist-options">
+          {trial.options.map((option) => (
+            <button key={option} type="button" className="gist-option" onClick={() => recordAnswer(option)}>{option}</button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (trial.gistType === 'oddOne') {
+    return (
+      <div className="gist-question visual-gist-question">
+        <span className="gist-type-badge"><Icon size={15} /> {meta.label}</span>
+        <h3>{trial.q}</h3>
+        <div className="visual-gist-icon-options">
+          {trial.options.map((option) => (
+            <button key={option} type="button" className="gist-option icon-option" onClick={() => recordAnswer(option)}>{option}</button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="gist-question visual-gist-question">
+      <span className="gist-type-badge"><Icon size={15} /> {meta.label}</span>
+      <h3>{trial.q}</h3>
+      <div className="gist-options">
+        {trial.options.map((option) => (
+          <button key={option} type="button" className="gist-option" onClick={() => recordAnswer(option)}>{option}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StreamWordCard({ trial, onDone }) {
+  useEffect(() => {
+    const timeout = window.setTimeout(() => onDone('seen'), 1250);
+    return () => window.clearTimeout(timeout);
+  }, [trial.q]);
+
+  const categoryStyles = {
+    animal: { label: 'Animal', className: 'category-animal' },
+    object: { label: 'Object', className: 'category-object' },
+    color: { label: 'Color', className: 'category-color' },
+  };
+  const meta = categoryStyles[trial.category] || categoryStyles.object;
+
+  return (
+    <div className="stream-word-stage">
+      <div className="stream-progress">
+        {Array.from({ length: trial.streamTotal }).map((_, index) => (
+          <span key={index} className={index < trial.streamIndex ? 'seen' : ''} />
+        ))}
+      </div>
+      <div className={`stream-word-card ${meta.className}`} key={trial.q}>
+        <span className="stream-category-badge">{meta.label}</span>
+        <strong className="stream-word-text">{trial.q}</strong>
+      </div>
+      <p className="stream-hint">Watch closely — you won't type these back, just remember the gist.</p>
+    </div>
+  );
+}
+
+function GistQuestionGame({ trial, recordAnswer }) {
+  const typeMeta = {
+    seen: { icon: Eye, label: 'Recognition' },
+    count: { icon: BarChart3, label: 'Count' },
+    oddOne: { icon: Search, label: 'Spot the outsider' },
+  };
+  const meta = typeMeta[trial.gistType] || typeMeta.seen;
+  const Icon = meta.icon;
+  return (
+    <div className="gist-question">
+      <span className="gist-type-badge"><Icon size={15} /> {meta.label}</span>
+      <h3>{trial.q}</h3>
+      <div className="gist-options">
+        {trial.options.map((option) => (
+          <button key={option} type="button" className="gist-option" onClick={() => recordAnswer(option)}>{option}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SpatialStageZones({ activePosition, children, onZoneClick, filled = {} }) {
+  return (
+    <div className="spatial-stage">
+      {spatialPositions.map((position) => (
+        <div key={position} className={`spatial-zone zone-${position} ${activePosition === position ? 'active' : ''}`}>
+          {onZoneClick ? (
+            <button type="button" className="spatial-zone-btn" onClick={() => onZoneClick(position)}>
+              {filled[position] || <span className="zone-dot" />}
+            </button>
+          ) : (
+            activePosition === position ? children : <span className="zone-dot" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SpatialWordCard({ trial, onDone }) {
+  useEffect(() => {
+    const timeout = window.setTimeout(() => onDone('seen'), 1400);
+    return () => window.clearTimeout(timeout);
+  }, [trial.q]);
+
+  return (
+    <div className="spatial-word-wrap">
+      <div className="stream-progress">
+        {Array.from({ length: trial.streamTotal }).map((_, index) => (
+          <span key={index} className={index < trial.streamIndex ? 'seen' : ''} />
+        ))}
+      </div>
+      <SpatialStageZones activePosition={trial.position}>
+        <span className="spatial-word-chip">{trial.q}</span>
+      </SpatialStageZones>
+      <p className="stream-hint">Notice where each word appears — you'll be asked about position, not order.</p>
+    </div>
+  );
+}
+
+function SpatialLocateGame({ trial, recordAnswer }) {
+  return (
+    <div className="spatial-question">
+      <span className="gist-type-badge"><Target size={15} /> Locate</span>
+      <h3>{trial.q}</h3>
+      <p className="muted">Tap the zone where you saw this word.</p>
+      <SpatialStageZones onZoneClick={recordAnswer} />
+    </div>
+  );
+}
+
+function SpatialRecallGame({ trial, recordAnswer }) {
+  const filled = { [trial.targetPosition]: <span className="zone-mark">?</span> };
+  return (
+    <div className="spatial-question">
+      <span className="gist-type-badge"><Brain size={15} /> Recall</span>
+      <h3>{trial.q}</h3>
+      <SpatialStageZones filled={filled} onZoneClick={() => {}} />
+      <div className="gist-options spatial-word-options">
+        {trial.options.map((option) => (
+          <button key={option} type="button" className="gist-option" onClick={() => recordAnswer(option)}>{option}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EmptyTask({ selectedProfile, selectedSong, taskType, gameVariant, startTest }) {
+  const selectedGame = taskGames[taskType]?.find((game) => game.id === gameVariant) || taskGames[taskType]?.[0];
+  return <div className="test-card empty-task"><div className="score-orb small"><Headphones size={28} /></div><h3>{selectedGame?.name || (selectedProfile.id === 'itunes' && selectedSong ? selectedSong.trackName : selectedProfile.name)} ready</h3><div className="how-to-play"><strong>How the test works</strong><span>1. Choose your sound and game.</span><span>2. {selectedGame?.prompt}</span><span>3. Work quickly, because score decreases when average answer time is too slow.</span><span>4. Record mood after the session for the AI summary.</span></div><button className="primary-action" onClick={startTest}><Play size={18} /> Begin trial</button></div>;
+}
+
+function InsightAndFeedback(props) {
+  const session = props.latestSession;
+  const averageScore = getSessionAverage(props.sessions, session.id);
+  const vsAverage = averageScore === null ? 0 : session.accuracy - averageScore;
+  const consistency = clampPercent((session.rawAccuracy * 0.7) + (Math.max(0, 10 - Math.abs(session.postMood - session.preMood)) * 3));
+  const depthScore = clampPercent((session.accuracy * 0.72) + (session.postMood * 2.8));
+  const taskProgress = `${Math.round((session.rawAccuracy / 100) * 5)} of 5`;
+  const timelineStates = getFlowStatesForSession(session);
+
+  return (
+    <section className="results-layout">
+      <div className="insight-wrap">
+        <div className="section-heading"><WandSparkles size={22} /><div><h2>AI Insight Card</h2><p>Logged-in users can generate and share a personalized summary.</p></div></div>
+        <button className="primary-action" onClick={props.generateInsight}><WandSparkles size={18} /> {props.aiStatus === 'loading' ? 'Generating...' : props.aiInsight ? 'Regenerate AI Insight' : 'Generate AI Insight'}</button>
+        <article className="share-card" ref={props.cardRef}>
+          <div className="receipt-header">
+            <span>Neurobeats</span>
+            <h3>Focus receipt</h3>
+            <p>{formatReceiptDate(session.date)}</p>
+          </div>
+          <div className="receipt-body">
+            <div className="receipt-row"><span>Session length</span><strong>{formatSeconds(session.sessionLength)}</strong></div>
+            <div className="receipt-row"><span>Sound used</span><strong>{session.soundUsed}</strong></div>
+            <div className="receipt-row"><span>Tasks completed</span><strong>{taskProgress}</strong></div>
+            <div className="receipt-divider" />
+            <div className="timeline-block">
+              <span>Flow state timeline</span>
+              <div className="flow-timeline">{timelineStates.map((state, index) => <i key={`${state}-${index}`} className={state} />)}</div>
+              <div className="timeline-legend"><span><i className="deep" /> Deep flow</span><span><i className="focused" /> Focused</span><span><i className="drifting" /> Drifting</span></div>
+            </div>
+            <div className="receipt-divider" />
+            <ReceiptMeter label="Depth score" value={depthScore} />
+            <ReceiptMeter label="Consistency" value={consistency} />
+            <ReceiptMeter label="vs. your average" value={Math.abs(vsAverage)} display={averageScore === null ? 'New' : `${vsAverage >= 0 ? '+' : '-'}${Math.abs(vsAverage)}`} tone="blue" />
+            <div className="receipt-divider" />
+            <div className="receipt-insight">
+              <strong>AI Insight</strong>
+              <p>{props.aiInsight || 'Generate your AI Insight to fill this receipt with a personalized recommendation based on your performance.'}</p>
+            </div>
+            <div className="receipt-divider" />
+            <div className="focus-score"><span>Focus Score</span><strong>{session.accuracy}<small>/100</small></strong></div>
+          </div>
+        </article>
+        <div className="share-actions"><button onClick={() => props.shareCard('native')}><Share2 size={16} /> Share</button><button onClick={props.downloadCard}><Download size={16} /> Save</button><button onClick={() => props.shareCard('twitter')}><Share2 size={16} /> Twitter</button><button onClick={() => props.shareCard('linkedin')}><Share2 size={16} /> LinkedIn</button><button onClick={() => props.shareCard('whatsapp')}><Share2 size={16} /> WhatsApp</button></div>
+      </div>
+      <div className="feedback-panel">
+        <div className="section-heading"><Mail size={22} /><div><h2>Feedback</h2><p>Write about your experience. Groq will recommend music from your feedback and results.</p></div></div>
+        <textarea value={props.feedback} onChange={(event) => props.setFeedback(event.target.value)} placeholder="How did the music feel? Were you focused, distracted, calm, energized, or tired?" />
+        <button className="primary-action" onClick={props.submitFeedback}>{props.feedbackStatus === 'loading' ? 'Analyzing...' : 'Submit Feedback'}</button>
+        {props.feedbackInsight ? <p className="feedback-result">{props.feedbackInsight}</p> : null}
+        {props.feedbackSongs?.length ? (
+          <div className="feedback-song-list">
+            <strong>Fresh recommendations from your feedback</strong>
+            {props.feedbackSongs.slice(0, 6).map((song) => (
+              <article key={song.trackId}>
+                <img src={song.artworkUrl100} alt="" />
+                <div><span>{song.trackName}</span><small>{song.artistName}</small></div>
+                <button onClick={() => { props.setSelectedSong(song); props.setProfileId('itunes'); props.setAudioOn(true); }}><Play size={15} /> Play</button>
+              </article>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function ReceiptMeter({ label, value, display = value, tone = 'green' }) {
+  return (
+    <div className={`receipt-meter ${tone}`}>
+      <span>{label}</span>
+      <div><i style={{ width: `${Math.min(100, value)}%` }} /></div>
+      <strong>{display}</strong>
+    </div>
+  );
+}
+
+function ResultsPage({ sessions, navigate }) {
+  return <section className="content-page"><h1>Results</h1>{sessions.length ? <div className="session-list">{sessions.map((session) => <article key={session.id} className="session-row"><span>{session.taskName}</span><span>{session.soundUsed}</span><strong>{session.accuracy}%</strong><small>{formatSeconds(session.sessionLength)}</small></article>)}</div> : <button className="primary-action" onClick={() => navigate('focus')}>Run your first Focus Test</button>}</section>;
+}
+
+function HistoryPage({ user, sessions, goAuth, navigate, shareSession, deleteSessions, openSession }) {
+  const [selectedIds, setSelectedIds] = useState([]);
+  if (!user) {
+    return (
+      <section className="content-page">
+        <h1>History</h1>
+        <div className="contact-card">
+          <Lock size={24} />
+          <p>Session history is available only after login or sign up.</p>
+          <div className="hero-actions"><button className="primary-action" onClick={() => goAuth('login')}>Log In</button><button className="secondary-action" onClick={() => goAuth('signup')}>Sign Up</button></div>
+        </div>
+      </section>
+    );
+  }
+  function toggleSelected(id) {
+    setSelectedIds(selectedIds.includes(id) ? selectedIds.filter((item) => item !== id) : [...selectedIds, id]);
+  }
+  function deleteSelected() {
+    deleteSessions(selectedIds);
+    setSelectedIds([]);
+  }
+  return (
+    <section className="content-page history-page">
+      <div className="section-heading"><BarChart3 size={24} /><div><h1>History</h1><p>View saved sessions, share results, open receipts, or delete selected sessions.</p></div></div>
+      {sessions.length ? (
+        <>
+          <div className="history-actions">
+            <button className="secondary-action" onClick={() => setSelectedIds(selectedIds.length === sessions.length ? [] : sessions.map((session) => session.id))}>{selectedIds.length === sessions.length ? 'Clear selection' : 'Select all'}</button>
+            <button className="primary-action" onClick={deleteSelected} disabled={!selectedIds.length}>Delete selected</button>
+          </div>
+          <div className="history-list">
+            {sessions.map((session) => (
+              <article key={session.id} className={`history-row ${selectedIds.includes(session.id) ? 'selected' : ''}`}>
+                <label className="history-check"><input type="checkbox" checked={selectedIds.includes(session.id)} onChange={() => toggleSelected(session.id)} aria-label={`Select ${session.taskName} session`} /></label>
+                <div className="history-session-main">
+                  <strong>{session.taskName}</strong>
+                  <div className="history-session-meta">
+                    <small>{formatReceiptDate(session.date)}</small>
+                    <span>{session.soundUsed}</span>
+                  </div>
+                </div>
+                <Metric label="Score" value={`${session.accuracy}/100`} />
+                <Metric label="Mood" value={`${session.postMood}/10`} />
+                <Metric label="Length" value={formatSeconds(session.sessionLength)} />
+                <div className="history-row-actions">
+                  <button onClick={() => openSession(session)}>Open</button>
+                  <button onClick={() => shareSession(session)}><Share2 size={15} /> Share</button>
+                  <button onClick={() => deleteSessions([session.id])}>Delete</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="contact-card"><p>No sessions saved yet.</p><button className="primary-action" onClick={() => navigate('focus')}>Start Focus Test</button></div>
+      )}
+    </section>
+  );
+}
+
+function FeedbackPage({ navigate }) {
+  const examples = [
+    { name: 'Aanya, Student', mood: 'Calm', focus: 86, rating: 5, sound: 'Lo-fi + rain', comment: 'The steady background helped me stay with a difficult reading task without feeling rushed.', recommendation: 'Try more mellow lo-fi with light piano.' },
+    { name: 'Rohan, Employee', mood: 'Energized', focus: 74, rating: 4, sound: 'Ambient electronic', comment: 'Good for getting started. I liked the rhythm, but I needed something softer for the final task.', recommendation: 'Next: atmospheric focus with a slower tempo.' },
+    { name: 'Mira, Teacher', mood: 'Focused', focus: 92, rating: 5, sound: 'Classical piano', comment: 'The session felt clear and structured. My score improved when the music stayed consistent.', recommendation: 'Keep piano textures and explore modern classical.' },
+  ];
+  return (
+    <section className="content-page feedback-page">
+      <div className="feedback-hero">
+        <div>
+          <span className="eyebrow"><Mail size={16} /> Your experience matters</span>
+          <h1>Feedback that<br /><em>shapes your sound.</em></h1>
+          <p>Every reflection helps Neurobeats understand how music, mood, and performance work together for you. After a session, share what felt good, what distracted you, and what you want to hear next.</p>
+        </div>
+        <div className="feedback-hero-stat"><strong>3</strong><span>signals used<br />to personalize<br />your next session</span></div>
+      </div>
+      <div className="feedback-explainer">
+        <div className="feedback-explainer-icon"><Sparkles size={24} /></div>
+        <div><strong>How your feedback helps</strong><p>Groq considers your words, score, mood, task, and previous sound. It then creates a personal response and searches iTunes for fresh recommendations.</p></div>
+        <button className="secondary-action" onClick={() => navigate('focus')}>Share your experience <ChevronRight size={17} /></button>
+      </div>
+      <div className="feedback-section-heading"><div><span className="eyebrow"><Activity size={16} /> Community snapshots</span><h2>Real feelings. Useful patterns.</h2></div><p>Sample session reflections</p></div>
+      <div className="feedback-example-grid">
+        {examples.map((example) => (
+          <article className="feedback-example-card" key={example.name}>
+            <div className="feedback-example-top"><div className="feedback-avatar">{example.name[0]}</div><div><strong>{example.name}</strong><small>{example.sound}</small></div><span className="feedback-rating" aria-label={`${example.rating} out of 5 stars`}>{'★'.repeat(example.rating)}<i>{'★'.repeat(5 - example.rating)}</i></span></div>
+            <blockquote>“{example.comment}”</blockquote>
+            <div className="feedback-metrics"><span><small>Mood</small><strong>{example.mood}</strong></span><span><small>Focus score</small><strong>{example.focus}/100</strong></span></div>
+            <div className="feedback-recommendation"><WandSparkles size={17} /><p><small>AI recommendation</small>{example.recommendation}</p></div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function LoginModal({ close, goAuth }) {
+  return <div className="modal-backdrop"><div className="modal-card"><h2>Login required</h2><p>AI Insight cards are available only to logged-in users.</p><div className="hero-actions"><button className="primary-action" onClick={() => { close(); goAuth('login'); }}>Log In</button><button className="secondary-action" onClick={() => { close(); goAuth('signup'); }}>Sign Up</button></div><button className="text-action" onClick={close}>Close</button></div></div>;
+}
+
+function PrivacyGateModal({ scrolled, checked, setChecked, onScrollComplete, onAgree }) {
+  function handleScroll(event) {
+    const element = event.currentTarget;
+    if (element.scrollTop + element.clientHeight >= element.scrollHeight - 12) onScrollComplete();
+  }
+  const canAgree = scrolled && checked;
+  return (
+    <div className="modal-backdrop">
+      <div className="modal-card privacy-gate-card">
+        <h2>Privacy Policy Agreement</h2>
+        <p>You need to read and agree to the Privacy Policy before logging in or signing up.</p>
+        <div className="privacy-scroll-box" onScroll={handleScroll}>
+          <h3>Neurobeats Privacy Policy</h3>
+          <p>Neurobeats stores your account and session details in this browser so the app can run focus tests, save session history, and personalize recommendations.</p>
+          <p>We may use your name, email, role, genre and language preferences, selected audio, focus-game answers, score, session length, mood ratings, AI insight text, and written feedback.</p>
+          <p>EmailJS may receive registration or login event details when configured. Groq may receive session details and feedback to generate AI insights and recommendation text. The iTunes API receives music search terms to return song previews.</p>
+          <p>Your session history is stored locally in your browser. You can delete saved sessions from the History page or clear browser site data to remove locally stored account/session information.</p>
+          <p>If you share an insight card or session, it may include your task, score, session length, sound used, mood, and AI-generated insight. Downloaded cards are saved by you as image files.</p>
+          <p>Neurobeats is an experimental focus platform. It is not medical, psychological, or academic advice, and it does not guarantee improved focus, productivity, grades, or mood.</p>
+          <p>Contact: <a href="mailto:neurobeats.work@gmail.com">neurobeats.work@gmail.com</a>. Location: India.</p>
+          <strong>End of Privacy Policy</strong>
+        </div>
+        <label className="legal-consent privacy-gate-consent">
+          <input type="checkbox" checked={checked} disabled={!scrolled} onChange={(event) => setChecked(event.target.checked)} />
+          <span>{scrolled ? 'I have read and agree with the Privacy Policy.' : 'Scroll to the bottom to enable this checkbox.'}</span>
+        </label>
+        <button className="primary-action" disabled={!canAgree} onClick={onAgree}>Agree and continue</button>
+      </div>
+    </div>
+  );
+}
+
+function Footer({ navigate }) {
+  return (
+    <footer className="footer">
+      <div><h3>Quick Links</h3>{[['home', 'Home'], ['about', 'About'], ['focus', 'Focus Test'], ['results', 'Results'], ['history', 'History'], ['feedback', 'Feedback'], ['privacy', 'Privacy Policy'], ['terms', 'Terms and Conditions']].map(([id, label]) => <button key={id} onClick={() => navigate(id)}>{label}</button>)}</div>
+      <div><h3>Contact</h3><a href="mailto:neurobeats.work@gmail.com">neurobeats.work@gmail.com</a><p>India</p></div>
+      <div><h3>Social Links</h3><a href="https://github.com/samarthuniadmissions-bot/Neurobeats" target="_blank" rel="noreferrer"><Share2 size={16} /> GitHub</a><a href="https://www.linkedin.com" target="_blank" rel="noreferrer"><Share2 size={16} /> LinkedIn</a><a href="https://twitter.com" target="_blank" rel="noreferrer"><Share2 size={16} /> Twitter</a><a href="https://www.instagram.com" target="_blank" rel="noreferrer"><Share2 size={16} /> Instagram</a></div>
+      <p className="copyright">© 2026 Neurobeats. All Rights Reserved.</p>
+    </footer>
+  );
+}
+
+function Panel({ title, icon: Icon, children }) {
+  return <article className="panel"><h2><Icon size={18} /> {title}</h2>{children}</article>;
+}
+
+function MoodSlider({ label, value, onChange }) {
+  return <label className="mood-slider"><span>{label} mood <strong>{value}/10</strong></span><input type="range" min="1" max="10" value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>;
+}
+
+function FocusSignal({ profile, audioOn, song }) {
+  const frequencyLabel = profile.id === 'itunes' ? 'Dynamic preview spectrum' : profile.id === 'alpha' ? '10 Hz alpha rhythm' : profile.id === 'lofi' ? '72 BPM low-mid pulse' : profile.id === 'brown-noise' ? 'Low-frequency noise curve' : 'Silent baseline';
+  return <div className={`focus-signal signal-${profile.id}`} style={{ '--profile-color': profile.color }}><div className="signal-header"><span>{profile.id === 'itunes' && song ? song.trackName : profile.name}</span><strong>{audioOn ? 'Live' : 'Ready'}</strong></div><div className={`frequency-stage ${audioOn ? 'playing' : ''}`}><div className="frequency-grid" /><div className="frequency-line">{Array.from({ length: 72 }).map((_, index) => <span key={index} style={{ '--i': index }} />)}</div><div className="spectrum-bars">{Array.from({ length: 34 }).map((_, index) => <span key={index} style={{ '--i': index }} />)}</div><span className="frequency-label">{frequencyLabel}</span></div><div className="signal-footer"><span>{profile.id === 'itunes' && song ? song.artistName : profile.label}</span><span>{profile.tempo}</span></div></div>;
+}
+
+function Metric({ label, value }) {
+  return <div className="metric"><span>{label}</span><strong>{value}</strong></div>;
+}
+
+export default App;
