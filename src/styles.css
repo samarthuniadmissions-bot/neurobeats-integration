@@ -4239,34 +4239,38 @@ h1, h2, h3, .content-page h1, .auth-view h1, .home-section h2, .brand {
 .hero-actions { gap: 12px; flex-wrap: wrap; }
 
 .primary-action,
-.secondary-action {
+.secondary-action,
+.landing .secondary-action {
   min-height: 52px;
   border-radius: 999px;
   padding: 0 24px;
 }
 
 .primary-action {
-  color: var(--paper);
-  background: var(--teal-deep);
+  color: var(--paper) !important;
+  background: var(--teal-deep) !important;
   border: 0;
   box-shadow: 0 12px 32px oklch(0.38 0.08 280 / 0.22);
 }
 
 .primary-action:hover {
-  color: var(--paper);
-  background: var(--violet);
+  color: var(--paper) !important;
+  background: var(--violet) !important;
   transform: translateY(-2px);
   box-shadow: 0 18px 42px oklch(0.38 0.08 280 / 0.28);
 }
 
-.secondary-action {
-  color: var(--teal-deep);
-  background: var(--teal-soft);
-  border: 1px solid var(--line);
+.secondary-action,
+.landing .secondary-action {
+  color: var(--teal-deep) !important;
+  background: var(--teal-soft) !important;
+  border: 1px solid var(--line) !important;
 }
 
-.secondary-action:hover {
-  background: var(--yellow-soft);
+.secondary-action:hover,
+.landing .secondary-action:hover {
+  color: var(--teal-deep) !important;
+  background: var(--yellow-soft) !important;
 }
 
 .future-path {
