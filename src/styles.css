@@ -4029,6 +4029,7 @@ h1, h2, h3, .content-page h1, .auth-view h1, .home-section h2, .brand {
   .step-grid article strong { width: 58px; height: 58px; }
   .step-grid article div { grid-template-columns: 1fr; gap: 7px; }
   .testimonial { grid-template-columns: 1fr; }
+}
 
 /* ===== Neurobeats circular orbit system ===== */
 :root {
