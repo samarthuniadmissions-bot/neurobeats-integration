@@ -30,7 +30,7 @@ import {
   UserPlus,
   WandSparkles,
 } from 'lucide-react';
-import './styles.css';
+
 
 const STORAGE_KEY = 'neurobeats-sessions';
 const USER_KEY = 'neurobeats-user';
@@ -2698,4 +2698,4 @@ function Metric({ label, value }) {
   return <div className="metric"><span>{label}</span><strong>{value}</strong></div>;
 }
 
-createRoot(document.getElementById('root')).render(<App />);
+export default App;
