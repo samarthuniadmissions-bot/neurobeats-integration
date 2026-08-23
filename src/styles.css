@@ -4168,7 +4168,7 @@ h1, h2, h3, .content-page h1, .auth-view h1, .home-section h2, .brand {
 
 .landing {
   min-height: auto;
-  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(520px, 1fr);
   gap: clamp(40px, 6vw, 84px);
   align-items: center;
   padding: clamp(80px, 11vh, 120px) 0 56px;
