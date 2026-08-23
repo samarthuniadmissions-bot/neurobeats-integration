@@ -4360,9 +4360,10 @@ h1, h2, h3, .content-page h1, .auth-view h1, .home-section h2, .brand {
 .signal-console {
   position: relative;
   z-index: 1;
-  min-height: 200px;
-  max-width: 360px;
-  width: 100%;
+  width: 240px;
+  height: 240px;
+  max-width: 240px;
+  max-height: 240px;
   justify-self: center;
   align-self: center;
   background: var(--teal-deep);
