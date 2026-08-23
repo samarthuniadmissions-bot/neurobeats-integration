@@ -1421,18 +1421,25 @@ function HomePage({ navigate }) {
   return (
     <section className="landing">
       <div className="hero-copy">
-        <span className="eyebrow"><Sparkles size={16} /> Personalized sound science</span>
-        <h1>Neurobeats</h1>
-        <p>Neurobeats tests how music, mood, and task performance interact, then turns your results into personalized focus recommendations.</p>
-        <button className="primary-action" onClick={() => navigate('focus')}><Play size={18} /> Focus Test</button>
+        <span className="eyebrow"><Sparkles size={16} /> AI for your cognitive future</span>
+        <h1>Shape how you focus next.</h1>
+        <p>Neurobeats learns how sound, mood, and performance work together—then turns every session into a smarter path forward.</p>
+        <div className="hero-actions">
+          <button className="primary-action" onClick={() => navigate('focus')}><Play size={18} /> Start your focus test</button>
+          <button className="secondary-action" onClick={() => navigate('how')}>See how it learns <ChevronRight size={17} /></button>
+        </div>
+        <div className="future-path" aria-label="Neurobeats learning loop">
+          <span><small>01</small> Listen</span><ChevronRight size={15} /><span><small>02</small> Measure</span><ChevronRight size={15} /><span><small>03</small> Evolve</span>
+        </div>
       </div>
       <div className="landing-panel">
         <div className="signal-console-heading">
-          <span><Activity size={16} /> Live focus signal</span>
-          <strong>Ready</strong>
+          <span><Activity size={16} /> Neurobeats intelligence</span>
+          <strong>AI ready</strong>
         </div>
         <div className="signal-console" aria-hidden="true">
           <div className="signal-console-grid" />
+          <div className="signal-axis"><span>FOCUS</span><span>FUTURE</span></div>
           <div className="signal-wave">
             {Array.from({ length: 28 }, (_, index) => <i key={index} style={{ '--wave-index': index }} />)}
           </div>
@@ -1441,40 +1448,40 @@ function HomePage({ navigate }) {
           <span className="signal-node signal-node-three" />
         </div>
         <div className="signal-console-metrics">
-          <span><small>Audio</small><strong>Adaptive</strong></span>
-          <span><small>Tasks</small><strong>Timed</strong></span>
-          <span><small>Insight</small><strong>Personal</strong></span>
+          <span><small>Input</small><strong>Your sound</strong></span>
+          <span><small>Signal</small><strong>Live results</strong></span>
+          <span><small>Output</small><strong>Next move</strong></span>
         </div>
-        <p>Turn sound, mood, and performance into a focus pattern that is uniquely yours.</p>
+        <p><strong>One session. A clearer trajectory.</strong> Your results become a personal signal for what to try next.</p>
       </div>
       <div className="landing-band">
-        <Metric label="Features" value="AI + iTunes" />
-        <Metric label="Working" value="Test → Mood → Insight" />
-        <Metric label="Owner" value="Samarth" />
+        <Metric label="Engine" value="AI + music" />
+        <Metric label="Method" value="Test → learn → adapt" />
+        <Metric label="Result" value="Your focus pattern" />
       </div>
       <div className="home-section">
-        <span className="eyebrow"><Check size={16} /> Features</span>
-        <h2>Built for personal focus experiments</h2>
+        <span className="eyebrow"><Check size={16} /> The intelligence layer</span>
+        <h2>Three signals. One smarter direction.</h2>
         <div className="home-card-grid">
-          <article><Headphones size={24} /><h3>Audio personalization</h3><p>Choose role, genre, language or region, artist, and natural-language prompts for better music matches.</p></article>
-          <article><Target size={24} /><h3>Timed focus games</h3><p>Play math, memory recall, and missing-icon memory tasks while the selected sound runs in the background.</p></article>
-          <article><WandSparkles size={24} /><h3>AI focus receipts</h3><p>After each session, Groq turns score, time, mood, and sound into a shareable insight card.</p></article>
+          <article className="capability-audio"><span className="card-index">01 / LISTEN</span><Headphones size={28} /><h3>Sound matched to you</h3><p>Choose role, genre, language, region, artist, or simply describe what you need. Neurobeats shapes the search around your context.</p><span className="card-signal">Personalized input</span></article>
+          <article className="capability-test"><span className="card-index">02 / MEASURE</span><Target size={28} /><h3>Focus you can see</h3><p>Run timed math, recall, and visual-memory tasks while your selected sound plays.</p><span className="card-signal">Live performance</span></article>
+          <article className="capability-ai"><span className="card-index">03 / EVOLVE</span><WandSparkles size={28} /><h3>AI turns results into action</h3><p>Score, time, mood, and sound become a clear, shareable insight—so the next session starts smarter than the last.</p><span className="card-signal">Personal next step</span></article>
         </div>
       </div>
       <div className="home-section home-steps">
-        <span className="eyebrow"><Activity size={16} /> How It Works</span>
-        <h2>From music choice to measurable insight</h2>
+        <span className="eyebrow"><Activity size={16} /> Your change loop</span>
+        <h2>Turn what you do today into a better next session.</h2>
         <div className="step-grid">
-          <article><strong>01</strong><h3>Personalize sound</h3><p>Answer quick role-based questions and optionally add artist, genre, or language preferences.</p></article>
-          <article><strong>02</strong><h3>Run the focus test</h3><p>Complete a timed task while the selected iTunes preview or focus sound plays without pausing.</p></article>
-          <article><strong>03</strong><h3>Save mood and results</h3><p>Record how you feel after the session so the recommendation learns from both performance and mood.</p></article>
-          <article><strong>04</strong><h3>Review history</h3><p>Open, share, or delete saved sessions from History when you are logged in.</p></article>
+          <article><strong>01</strong><div><small>TODAY</small><h3>Set your sound context</h3><p>Answer quick role-based questions and add any artist, genre, or language preferences.</p></div></article>
+          <article><strong>02</strong><div><small>NOW</small><h3>Test focus in motion</h3><p>Complete a timed task while your chosen preview or focus sound continues to play.</p></div></article>
+          <article><strong>03</strong><div><small>LEARN</small><h3>Connect mood to results</h3><p>Record how you feel so AI can interpret performance and experience together.</p></div></article>
+          <article><strong>04</strong><div><small>NEXT</small><h3>Build on your history</h3><p>Return to saved sessions, compare patterns, and make your next choice with more confidence.</p></div></article>
         </div>
       </div>
       <div className="home-section about-strip">
         <AboutStory />
       </div>
-      <div className="testimonial">“Neurobeats made focus feel measurable instead of random.”</div>
+      <div className="testimonial"><span>THE FUTURE IS A FEEDBACK LOOP.</span> “Neurobeats made focus feel measurable instead of random.”</div>
     </section>
   );
 }
