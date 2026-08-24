@@ -1421,67 +1421,64 @@ function HomePage({ navigate }) {
   return (
     <section className="landing">
       <div className="hero-copy">
-        <span className="eyebrow"><Sparkles size={16} /> AI for your cognitive future</span>
-        <h1>Shape how you focus next.</h1>
-        <p>Neurobeats learns how sound, mood, and performance work together—then turns every session into a smarter path forward.</p>
+        <span className="eyebrow"><Music2 size={16} /> Find your focus sound</span>
+        <h1>Music that helps your mind settle.</h1>
+        <p>Neurobeats matches gentle sound, short focus tasks, and your mood to help you build a calm routine that feels like yours.</p>
         <div className="hero-actions">
-          <button className="primary-action" onClick={() => navigate('focus')}><Play size={18} /> Start your focus test</button>
-          <button className="secondary-action" onClick={() => navigate('how')}>See how it learns <ChevronRight size={17} /></button>
+          <button className="primary-action" onClick={() => navigate('focus')}><Play size={18} /> Start a focus session</button>
+          <button className="secondary-action" onClick={() => navigate('how')}>See how it works <ChevronRight size={17} /></button>
         </div>
-        <div className="future-path" aria-label="Neurobeats learning loop">
-          <span><small>01</small> Listen</span><ChevronRight size={15} /><span><small>02</small> Measure</span><ChevronRight size={15} /><span><small>03</small> Evolve</span>
+        <div className="future-path" aria-label="Neurobeats focus loop">
+          <span><small>1</small> Listen</span><ChevronRight size={15} /><span><small>2</small> Focus</span><ChevronRight size={15} /><span><small>3</small> Reflect</span>
         </div>
       </div>
       <div className="landing-panel">
-        <div className="signal-console-heading">
-          <span><Activity size={16} /> Neurobeats intelligence</span>
-          <strong>AI ready</strong>
-        </div>
-        <div className="signal-console" aria-hidden="true">
-          <div className="signal-console-grid" />
-          <div className="signal-axis"><span>FOCUS</span><span>FUTURE</span></div>
-          <div className="signal-wave">
-            {Array.from({ length: 28 }, (_, index) => <i key={index} style={{ '--wave-index': index }} />)}
+        <div className="focus-preview">
+          <div className="focus-preview-header">
+            <span><Headphones size={16} /> Your focus session</span>
+            <strong>Ready</strong>
           </div>
-          <span className="signal-node signal-node-one" />
-          <span className="signal-node signal-node-two" />
-          <span className="signal-node signal-node-three" />
+          <div className="focus-orb" aria-hidden="true">
+            <div className="focus-orb-inner">
+              <Music2 size={32} />
+            </div>
+          </div>
+          <div className="focus-preview-metrics">
+            <span><small>Sound</small><strong>Matched to you</strong></span>
+            <span><small>Task</small><strong>Timed challenge</strong></span>
+            <span><small>Result</small><strong>Mood + score</strong></span>
+          </div>
+          <p><strong>One quiet session. One clearer step.</strong> Pick a sound, complete a short task, and see what helps your focus.</p>
         </div>
-        <div className="signal-console-metrics">
-          <span><small>Input</small><strong>Your sound</strong></span>
-          <span><small>Signal</small><strong>Live results</strong></span>
-          <span><small>Output</small><strong>Next move</strong></span>
-        </div>
-        <p><strong>One session. A clearer trajectory.</strong> Your results become a personal signal for what to try next.</p>
       </div>
       <div className="landing-band">
-        <Metric label="Engine" value="AI + music" />
-        <Metric label="Method" value="Test → learn → adapt" />
-        <Metric label="Result" value="Your focus pattern" />
+        <Metric label="Approach" value="Sound + focus + mood" />
+        <Metric label="Method" value="Short, gentle tasks" />
+        <Metric label="Outcome" value="Your calm routine" />
       </div>
       <div className="home-section">
-        <span className="eyebrow"><Check size={16} /> The intelligence layer</span>
-        <h2>Three signals. One smarter direction.</h2>
+        <span className="eyebrow"><Check size={16} /> How it works</span>
+        <h2>Three simple steps to a calmer focus.</h2>
         <div className="home-card-grid">
-          <article className="capability-audio"><span className="card-index">01 / LISTEN</span><Headphones size={28} /><h3>Sound matched to you</h3><p>Choose role, genre, language, region, artist, or simply describe what you need. Neurobeats shapes the search around your context.</p><span className="card-signal">Personalized input</span></article>
-          <article className="capability-test"><span className="card-index">02 / MEASURE</span><Target size={28} /><h3>Focus you can see</h3><p>Run timed math, recall, and visual-memory tasks while your selected sound plays.</p><span className="card-signal">Live performance</span></article>
-          <article className="capability-ai"><span className="card-index">03 / EVOLVE</span><WandSparkles size={28} /><h3>AI turns results into action</h3><p>Score, time, mood, and sound become a clear, shareable insight—so the next session starts smarter than the last.</p><span className="card-signal">Personal next step</span></article>
+          <article className="capability-audio"><span className="card-index">01 / Listen</span><Headphones size={28} /><h3>Sound matched to you</h3><p>Choose a role, mood, genre, or simply describe what you need. Neurobeats finds music that fits your context.</p><span className="card-signal">Personalized input</span></article>
+          <article className="capability-test"><span className="card-index">02 / Focus</span><Target size={28} /><h3>A short, gentle task</h3><p>Run timed math, memory, or visual tasks while your sound plays softly in the background.</p><span className="card-signal">Live performance</span></article>
+          <article className="capability-ai"><span className="card-index">03 / Reflect</span><WandSparkles size={28} /><h3>Insights from your session</h3><p>Score, time, and mood become a simple, shareable note about what supported your focus.</p><span className="card-signal">Personal next step</span></article>
         </div>
       </div>
       <div className="home-section home-steps">
-        <span className="eyebrow"><Activity size={16} /> Your change loop</span>
-        <h2>Turn what you do today into a better next session.</h2>
+        <span className="eyebrow"><Activity size={16} /> Your routine</span>
+        <h2>A small loop that adds up.</h2>
         <div className="step-grid">
-          <article><strong>01</strong><div><small>TODAY</small><h3>Set your sound context</h3><p>Answer quick role-based questions and add any artist, genre, or language preferences.</p></div></article>
-          <article><strong>02</strong><div><small>NOW</small><h3>Test focus in motion</h3><p>Complete a timed task while your chosen preview or focus sound continues to play.</p></div></article>
-          <article><strong>03</strong><div><small>LEARN</small><h3>Connect mood to results</h3><p>Record how you feel so AI can interpret performance and experience together.</p></div></article>
-          <article><strong>04</strong><div><small>NEXT</small><h3>Build on your history</h3><p>Return to saved sessions, compare patterns, and make your next choice with more confidence.</p></div></article>
+          <article><strong>01</strong><div><small>Today</small><h3>Set your sound context</h3><p>Answer quick questions about your role, energy, and listening preferences.</p></div></article>
+          <article><strong>02</strong><div><small>Now</small><h3>Test focus in motion</h3><p>Complete a short task while your chosen sound continues to play.</p></div></article>
+          <article><strong>03</strong><div><small>Learn</small><h3>Connect mood to results</h3><p>Record how you feel so you can interpret what worked best.</p></div></article>
+          <article><strong>04</strong><div><small>Next</small><h3>Build on your history</h3><p>Return to saved sessions, compare patterns, and choose with more confidence.</p></div></article>
         </div>
       </div>
       <div className="home-section about-strip">
         <AboutStory />
       </div>
-      <div className="testimonial"><span>THE FUTURE IS A FEEDBACK LOOP.</span> “Neurobeats made focus feel measurable instead of random.”</div>
+      <div className="testimonial"><span>“Focus feels calmer when I can hear what works.”</span> “Neurobeats helped me notice that softer music helps me settle into hard tasks without forcing it.”</div>
     </section>
   );
 }
