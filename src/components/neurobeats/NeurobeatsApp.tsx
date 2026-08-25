@@ -1673,12 +1673,12 @@ function AboutStory() {
         <div className="about-copy">
           <h2>Samarth Nathani</h2>
           <h3>How was this idea created?</h3>
-          <p>Neurobeats began with a simple question: why does the same music help one person focus, but distract another? Instead of guessing, the platform tests sound, task performance, time, and mood together.</p>
+          <p>Neurobeats began with a simple question: why does the same music help one person focus, but distract another? Instead of guessing, the platform quietly tests how sound, tasks, and mood come together.</p>
           <p>The idea grew from everyday study sessions where focus felt inconsistent. Sometimes calm music helped, sometimes silence worked better, and sometimes a stronger rhythm made difficult tasks easier to start.</p>
-          <p>Neurobeats turns that experience into a measurable system: users choose music, complete short focus games, record mood, and receive personalized AI insights backed by their own session data.</p>
+          <p>Neurobeats turns that experience into a gentle routine: choose a sound, complete a short focus task, record how you feel, and notice what helps you settle.</p>
           <div className="vision-card">
             <strong>Vision:</strong>
-            <p>Build a platform where people discover their best focus sound through evidence, personalization, and repeated self-testing.</p>
+            <p>A quiet place where anyone can discover the sounds that help them feel more present and focused.</p>
           </div>
         </div>
       </div>

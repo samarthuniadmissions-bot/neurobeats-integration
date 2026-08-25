@@ -4748,7 +4748,7 @@ input, textarea, select, .music-option, .profile-card, .song-card, .game-choices
   border-left: 0;
 }
 
-.vision-card strong { font-family: 'Lora', serif; letter-spacing: 0; }
+.vision-card strong { font-family: 'Lora', serif; letter-spacing: 0; color: var(--teal-deep); font-size: 0.95rem; }
 
 .footer { border-top-color: var(--line); }
 
