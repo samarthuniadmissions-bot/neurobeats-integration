@@ -1456,6 +1456,15 @@ function HomePage({ navigate }) {
         <Metric label="Method" value="Short, gentle tasks" />
         <Metric label="Outcome" value="Your calm routine" />
       </div>
+      <div className="fun-ticker" aria-hidden="true">
+        <div className="fun-ticker-track">
+          {[0, 1].map((k) => (
+            <span key={k}>
+              <em>lo-fi beats</em> ★ <em>deep focus</em> ★ <em>study mode</em> ★ <em>calm mind</em> ★ <em>fresh energy</em> ★ <em>quick tasks</em> ★ <em>mood check</em> ★&nbsp;
+            </span>
+          ))}
+        </div>
+      </div>
       <div className="home-section">
         <span className="eyebrow"><Check size={16} /> How it works</span>
         <h2>Three simple steps to a calmer focus.</h2>
