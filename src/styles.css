@@ -4247,17 +4247,17 @@ h1, h2, h3, .content-page h1, .auth-view h1, .home-section h2, .brand, .features
 }
 
 .primary-action {
-  color: var(--paper) !important;
-  background: var(--teal-deep) !important;
+  color: var(--charcoal) !important;
+  background: linear-gradient(135deg, var(--yellow) 0%, var(--orange) 100%) !important;
   border: 0 !important;
-  box-shadow: 0 10px 26px oklch(0.38 0.06 170 / 0.22);
+  box-shadow: 0 12px 30px oklch(0.55 0.14 55 / 0.28);
 }
 
 .primary-action:hover {
-  color: var(--paper) !important;
-  background: var(--teal) !important;
+  color: var(--charcoal) !important;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--clay) 100%) !important;
   transform: translateY(-2px);
-  box-shadow: 0 14px 34px oklch(0.38 0.06 170 / 0.28);
+  box-shadow: 0 16px 38px oklch(0.55 0.14 55 / 0.34);
 }
 
 .secondary-action,
