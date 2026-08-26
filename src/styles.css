@@ -4914,3 +4914,137 @@ button, .primary-action, .secondary-action, .nav-links button {
   .fun-ticker { margin-top: 16px; padding: 10px 0; }
   .fun-ticker-track { font-size: 0.82rem; }
 }
+
+/* ============ Simple + live layer (easy for everyone, more motion) ============ */
+
+body { font-size: 18px; }
+
+.simple-home .hero-copy h1 {
+  font-size: clamp(2.8rem, 6vw, 4.4rem) !important;
+  line-height: 1.05;
+}
+.simple-home .hero-copy p { font-size: 1.22rem; line-height: 1.6; color: var(--foreground); opacity: 0.85; }
+.simple-home .hero-note { font-size: 1rem; opacity: 0.65; margin-top: 6px; }
+
+/* big, obvious buttons */
+.big-cta {
+  font-size: 1.3rem !important;
+  padding: 20px 34px !important;
+  border-radius: 999px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 14px 30px oklch(0.7 0.16 60 / 0.35) !important;
+  animation: ctaPulse 2.4s ease-in-out infinite;
+}
+.wide-cta { display: inline-flex; margin-top: 34px; }
+@keyframes ctaPulse {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-3px) scale(1.03); }
+}
+.secondary-action { font-size: 1.1rem !important; padding: 16px 26px !important; }
+
+/* live now-playing card */
+.now-playing {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+  text-align: center;
+  padding: 8px 4px;
+}
+.now-playing-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.85rem;
+  color: var(--teal-deep, oklch(0.42 0.07 175));
+}
+.now-playing-top em { font-style: normal; opacity: 0.6; font-variant-numeric: tabular-nums; }
+.live-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: oklch(0.68 0.2 30);
+  box-shadow: 0 0 0 0 oklch(0.68 0.2 30 / 0.6);
+  animation: liveDot 1.6s ease-out infinite;
+}
+@keyframes liveDot {
+  0% { box-shadow: 0 0 0 0 oklch(0.68 0.2 30 / 0.55); }
+  100% { box-shadow: 0 0 0 16px oklch(0.68 0.2 30 / 0); }
+}
+.now-playing-title {
+  font-size: 2rem;
+  font-weight: 800;
+  animation: swapIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes swapIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* live equalizer */
+.live-eq { display: flex; align-items: flex-end; gap: 6px; height: 92px; }
+.live-eq span {
+  width: 10px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, oklch(0.86 0.17 90), oklch(0.68 0.18 45), oklch(0.55 0.11 175));
+  animation-name: eqBounce;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+  height: 30%;
+}
+@keyframes eqBounce {
+  0%, 100% { height: 22%; }
+  40% { height: 92%; }
+  70% { height: 48%; }
+}
+
+/* live stats */
+.live-band .metric { text-align: center; }
+.live-band .metric strong { font-size: 2.1rem; font-variant-numeric: tabular-nums; }
+.live-band .metric span { font-size: 0.95rem; opacity: 0.7; }
+
+/* simplified 3-step cards */
+.big-steps { text-align: center; }
+.big-steps h2 { font-size: clamp(2rem, 4vw, 2.9rem) !important; }
+.big-steps .home-card-grid article {
+  text-align: center;
+  align-items: center;
+  gap: 12px;
+  padding: 34px 26px !important;
+  border-radius: 28px !important;
+}
+.big-steps .home-card-grid article h3 { font-size: 1.5rem; }
+.big-steps .home-card-grid article p { font-size: 1.08rem; }
+.step-bubble {
+  width: 52px; height: 52px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font-weight: 800; font-size: 1.3rem;
+  background: oklch(0.88 0.16 90);
+  color: oklch(0.28 0.05 60);
+  animation: badgeBob 3s ease-in-out infinite;
+}
+.big-steps .home-card-grid article svg { animation: floatIcon 4s ease-in-out infinite; }
+@keyframes floatIcon {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-8px) rotate(3deg); }
+}
+
+@media (max-width: 720px) {
+  body { font-size: 17px; }
+  .big-cta { width: 100%; justify-content: center; font-size: 1.18rem !important; padding: 18px 24px !important; }
+  .secondary-action { width: 100%; justify-content: center; }
+  .now-playing-title { font-size: 1.6rem; }
+  .live-eq { height: 70px; gap: 5px; }
+  .live-eq span { width: 8px; }
+  .live-band .metric strong { font-size: 1.7rem; }
+}
+
+/* spacing + icon tuning for the simple home */
+.simple-home .home-section { padding-top: 48px !important; }
+.big-steps .home-card-grid { margin-top: 26px; }
+.big-steps .home-card-grid article svg { width: 44px !important; height: 44px !important; padding: 0 !important; background: transparent !important; }
+.wide-cta { width: 100%; }
+.live-band { margin-top: 34px !important; }
+.simple-home { row-gap: 24px !important; }
