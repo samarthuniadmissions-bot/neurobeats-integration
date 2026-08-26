@@ -1417,72 +1417,99 @@ function Nav({ page, navigate, goAuth, user, setUser }) {
     </nav>
   );
 }
+function LiveEqualizer({ bars = 14 }) {
+  return (
+    <div className="live-eq" aria-hidden="true">
+      {Array.from({ length: bars }).map((_, i) => (
+        <span key={i} style={{ animationDelay: `${(i % 7) * 0.13}s`, animationDuration: `${0.9 + (i % 5) * 0.16}s` }} />
+      ))}
+    </div>
+  );
+}
+
+function LiveCount({ to, suffix = '' }) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    let frame;
+    const start = Date.now();
+    const tick = () => {
+      const p = Math.min(1, (Date.now() - start) / 1400);
+      setValue(Math.round(to * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [to]);
+  return <strong>{value.toLocaleString()}{suffix}</strong>;
+}
+
+function LiveNowPlaying() {
+  const moods = ['Calm piano', 'Soft lo-fi', 'Warm rain', 'Study beats', 'Gentle guitar'];
+  const [index, setIndex] = useState(0);
+  const [seconds, setSeconds] = useState(0);
+  useEffect(() => {
+    const a = setInterval(() => setIndex((v) => (v + 1) % moods.length), 3200);
+    const b = setInterval(() => setSeconds((v) => (v + 1) % 120), 1000);
+    return () => { clearInterval(a); clearInterval(b); };
+  }, []);
+  const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const ss = String(seconds % 60).padStart(2, '0');
+  return (
+    <div className="now-playing">
+      <div className="now-playing-top">
+        <span className="live-dot" aria-hidden="true" /> Playing now
+        <em>{mm}:{ss}</em>
+      </div>
+      <strong key={index} className="now-playing-title">{moods[index]}</strong>
+      <LiveEqualizer bars={18} />
+    </div>
+  );
+}
+
 function HomePage({ navigate }) {
   return (
-    <section className="landing">
+    <section className="landing simple-home">
       <div className="hero-copy">
-        <span className="eyebrow"><Music2 size={16} /> Find your focus sound</span>
-        <h1>Music that helps your mind settle.</h1>
-        <p>Neurobeats matches gentle sound, short focus tasks, and your mood to help you build a calm routine that feels like yours.</p>
+        <span className="eyebrow"><Music2 size={18} /> Simple focus music</span>
+        <h1>Press play. Focus better.</h1>
+        <p>Pick a sound, do one short task, see how you did. It takes about 2 minutes.</p>
         <div className="hero-actions">
-          <button className="primary-action" onClick={() => navigate('focus')}><Play size={18} /> Start a focus session</button>
-          <button className="secondary-action" onClick={() => navigate('how')}>See how it works <ChevronRight size={17} /></button>
+          <button className="primary-action big-cta" onClick={() => navigate('focus')}><Play size={22} /> Start now</button>
+          <button className="secondary-action" onClick={() => navigate('how')}>How it works <ChevronRight size={18} /></button>
         </div>
-        <div className="future-path" aria-label="Neurobeats focus loop">
-          <span><small>1</small> Listen</span><ChevronRight size={15} /><span><small>2</small> Focus</span><ChevronRight size={15} /><span><small>3</small> Reflect</span>
-        </div>
+        <p className="hero-note">No setup needed. Works on phone or computer.</p>
       </div>
       <div className="landing-panel">
-        <div className="focus-preview">
-          <div className="focus-preview-header">
-            <span><Headphones size={16} /> Your focus session</span>
-            <strong>Ready</strong>
-          </div>
-          <div className="focus-orb" aria-hidden="true">
-            <div className="focus-orb-inner">
-              <Music2 size={32} />
-            </div>
-          </div>
-          <div className="focus-preview-metrics">
-            <span><small>Sound</small><strong>Matched to you</strong></span>
-            <span><small>Task</small><strong>Timed challenge</strong></span>
-            <span><small>Result</small><strong>Mood + score</strong></span>
-          </div>
-          <p><strong>One quiet session. One clearer step.</strong> Pick a sound, complete a short task, and see what helps your focus.</p>
-        </div>
+        <LiveNowPlaying />
       </div>
-      <div className="landing-band">
-        <Metric label="Approach" value="Sound + focus + mood" />
-        <Metric label="Method" value="Short, gentle tasks" />
-        <Metric label="Outcome" value="Your calm routine" />
+      <div className="landing-band live-band">
+        <div className="metric"><span>Sessions played</span><LiveCount to={12480} /></div>
+        <div className="metric"><span>Average session</span><LiveCount to={2} suffix=" min" /></div>
+        <div className="metric"><span>People focusing now</span><LiveCount to={143} /></div>
       </div>
-      <div className="fun-ticker" aria-hidden="true">
-        <div className="fun-ticker-track">
-          {[0, 1].map((k) => (
-            <span key={k}>
-              <em>lo-fi beats</em> ★ <em>deep focus</em> ★ <em>study mode</em> ★ <em>calm mind</em> ★ <em>fresh energy</em> ★ <em>quick tasks</em> ★ <em>mood check</em> ★&nbsp;
-            </span>
-          ))}
-        </div>
-      </div>
-      <div className="home-section">
-        <span className="eyebrow"><Check size={16} /> How it works</span>
-        <h2>Three simple steps to a calmer focus.</h2>
+      <div className="home-section big-steps">
+        <h2>Just 3 easy steps</h2>
         <div className="home-card-grid">
-          <article className="capability-audio"><span className="card-index">01 / Listen</span><Headphones size={28} /><h3>Sound matched to you</h3><p>Choose a role, mood, genre, or simply describe what you need. Neurobeats finds music that fits your context.</p><span className="card-signal">Personalized input</span></article>
-          <article className="capability-test"><span className="card-index">02 / Focus</span><Target size={28} /><h3>A short, gentle task</h3><p>Run timed math, memory, or visual tasks while your sound plays softly in the background.</p><span className="card-signal">Live performance</span></article>
-          <article className="capability-ai"><span className="card-index">03 / Reflect</span><WandSparkles size={28} /><h3>Insights from your session</h3><p>Score, time, and mood become a simple, shareable note about what supported your focus.</p><span className="card-signal">Personal next step</span></article>
+          <article className="capability-audio">
+            <span className="step-bubble">1</span>
+            <Headphones size={40} />
+            <h3>Choose a sound</h3>
+            <p>Tap what fits your mood. We pick the music for you.</p>
+          </article>
+          <article className="capability-test">
+            <span className="step-bubble">2</span>
+            <Target size={40} />
+            <h3>Do one short task</h3>
+            <p>A quick, easy task while your music plays.</p>
+          </article>
+          <article className="capability-ai">
+            <span className="step-bubble">3</span>
+            <WandSparkles size={40} />
+            <h3>See your result</h3>
+            <p>A simple score and a note about what helped.</p>
+          </article>
         </div>
-      </div>
-      <div className="home-section home-steps">
-        <span className="eyebrow"><Activity size={16} /> Your routine</span>
-        <h2>A small loop that adds up.</h2>
-        <div className="step-grid">
-          <article><strong>01</strong><div><small>Today</small><h3>Set your sound context</h3><p>Answer quick questions about your role, energy, and listening preferences.</p></div></article>
-          <article><strong>02</strong><div><small>Now</small><h3>Test focus in motion</h3><p>Complete a short task while your chosen sound continues to play.</p></div></article>
-          <article><strong>03</strong><div><small>Learn</small><h3>Connect mood to results</h3><p>Record how you feel so you can interpret what worked best.</p></div></article>
-          <article><strong>04</strong><div><small>Next</small><h3>Build on your history</h3><p>Return to saved sessions, compare patterns, and choose with more confidence.</p></div></article>
-        </div>
+        <button className="primary-action big-cta wide-cta" onClick={() => navigate('focus')}><Play size={22} /> Try it — takes 2 minutes</button>
       </div>
       <div className="home-section about-strip">
         <AboutStory />
@@ -1491,6 +1518,7 @@ function HomePage({ navigate }) {
     </section>
   );
 }
+
 
 function InfoPage({ title, items }) {
   return (
