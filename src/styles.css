@@ -5040,3 +5040,10 @@ body { font-size: 18px; }
   .live-eq span { width: 8px; }
   .live-band .metric strong { font-size: 1.7rem; }
 }
+
+/* spacing + icon tuning for the simple home */
+.simple-home .home-section { padding-top: 48px !important; }
+.big-steps .home-card-grid { margin-top: 26px; }
+.big-steps .home-card-grid article svg { width: 44px !important; height: 44px !important; padding: 0 !important; background: transparent !important; }
+.wide-cta { width: 100%; }
+.live-band { margin-top: 34px !important; }
