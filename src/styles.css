@@ -5047,3 +5047,4 @@ body { font-size: 18px; }
 .big-steps .home-card-grid article svg { width: 44px !important; height: 44px !important; padding: 0 !important; background: transparent !important; }
 .wide-cta { width: 100%; }
 .live-band { margin-top: 34px !important; }
+.simple-home { row-gap: 24px !important; }
