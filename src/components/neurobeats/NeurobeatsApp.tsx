@@ -1490,6 +1490,7 @@ function FloatingCubes() {
 function HomePage({ navigate }) {
   return (
     <section className="landing simple-home">
+      <FloatingCubes />
       <div className="hero-copy">
         <span className="eyebrow"><Music2 size={18} /> Simple focus music</span>
         <h1>Press play. Focus better.</h1>
