@@ -4798,3 +4798,119 @@ input, textarea, select, .music-option, .profile-card, .song-card, .game-choices
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
 }
+
+/* ============ Neurobeats playful motion layer (simpler, less hi-fi) ============ */
+
+/* simpler type: drop the serif elegance */
+h1, h2, h3, h4,
+.landing .hero-copy h1,
+.about-copy h2, .about-copy h3,
+.vision-card strong,
+.home-section h2 {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  letter-spacing: -0.02em;
+  font-weight: 800 !important;
+}
+
+/* moving background blobs */
+body::after {
+  content: '';
+  position: fixed;
+  inset: -20vh -10vw;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 25%, oklch(0.9 0.16 90 / 0.5), transparent 42%),
+    radial-gradient(circle at 80% 20%, oklch(0.85 0.14 190 / 0.45), transparent 40%),
+    radial-gradient(circle at 60% 85%, oklch(0.85 0.15 55 / 0.4), transparent 42%);
+  filter: blur(10px);
+  animation: blobDrift 22s ease-in-out infinite alternate;
+}
+
+@keyframes blobDrift {
+  0% { transform: translate3d(-2%, -1%, 0) scale(1); }
+  50% { transform: translate3d(3%, 2%, 0) scale(1.06); }
+  100% { transform: translate3d(-1%, 3%, 0) scale(1.02); }
+}
+
+/* scrolling fun ticker */
+.fun-ticker {
+  grid-column: 1 / -1;
+  margin-top: 22px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--teal-deep, oklch(0.42 0.07 175));
+  padding: 12px 0;
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.fun-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: tickerScroll 26s linear infinite;
+  white-space: nowrap;
+  color: oklch(0.98 0.02 95);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.fun-ticker-track em { font-style: normal; }
+.fun-ticker:hover .fun-ticker-track { animation-play-state: paused; }
+@keyframes tickerScroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* bouncy, tactile interactions */
+button, .primary-action, .secondary-action, .nav-links button {
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease, background 0.2s ease !important;
+}
+.primary-action:hover, .secondary-action:hover { transform: translateY(-3px) scale(1.04) rotate(-0.6deg) !important; }
+.primary-action:active, .secondary-action:active, button:active { transform: translateY(1px) scale(0.97) !important; }
+.nav-links button:hover { transform: translateY(-2px) scale(1.05) !important; }
+
+.home-card-grid article, .step-grid article, .metric, .vision-card {
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease !important;
+}
+.home-card-grid article:hover, .step-grid article:hover {
+  transform: translateY(-8px) rotate(-1deg) !important;
+  box-shadow: 0 22px 44px oklch(0.4 0.06 175 / 0.18) !important;
+}
+.metric:hover { transform: translateY(-4px) scale(1.02) !important; }
+
+/* wiggling icons */
+.home-card-grid article svg, .step-grid article svg { transition: transform 0.3s ease; }
+.home-card-grid article:hover svg, .step-grid article:hover svg { animation: iconWiggle 0.6s ease; }
+@keyframes iconWiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-12deg) scale(1.15); }
+  60% { transform: rotate(10deg) scale(1.12); }
+}
+
+/* eyebrow badge bob */
+.eyebrow { animation: badgeBob 3.4s ease-in-out infinite; }
+@keyframes badgeBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* hero orb: livelier, less precious */
+.focus-orb { animation: orbBounce 3.2s ease-in-out infinite !important; }
+.focus-orb-inner svg { animation: orbSpin 9s linear infinite; }
+@keyframes orbBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-12px) scale(1.04); }
+}
+@keyframes orbSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* focus loop steps step forward on hover */
+.future-path span { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease; }
+.future-path span:hover { transform: translateY(-4px) scale(1.06); }
+
+@media (max-width: 720px) {
+  .fun-ticker { margin-top: 16px; padding: 10px 0; }
+  .fun-ticker-track { font-size: 0.82rem; }
+}
