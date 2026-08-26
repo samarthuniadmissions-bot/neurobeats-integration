@@ -1455,10 +1455,16 @@ function LiveNowPlaying() {
   const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
   const ss = String(seconds % 60).padStart(2, '0');
   return (
-    <div className="now-playing">
+    <div className="now-playing scene-3d">
       <div className="now-playing-top">
         <span className="live-dot" aria-hidden="true" /> Playing now
         <em>{mm}:{ss}</em>
+      </div>
+      <div className="vinyl-3d" aria-hidden="true">
+        <div className="vinyl-3d-disc">
+          <span className="vinyl-3d-label"><Music2 size={26} /></span>
+        </div>
+        <div className="vinyl-3d-shadow" />
       </div>
       <strong key={index} className="now-playing-title">{moods[index]}</strong>
       <LiveEqualizer bars={18} />
@@ -1466,9 +1472,25 @@ function LiveNowPlaying() {
   );
 }
 
+function FloatingCubes() {
+  return (
+    <div className="cube-field" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className={`cube-3d cube-${i + 1}`}>
+          {['front', 'back', 'left', 'right', 'top', 'bottom'].map((f) => (
+            <span key={f} className={`cube-face ${f}`} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
 function HomePage({ navigate }) {
   return (
     <section className="landing simple-home">
+      <FloatingCubes />
       <div className="hero-copy">
         <span className="eyebrow"><Music2 size={18} /> Simple focus music</span>
         <h1>Press play. Focus better.</h1>
