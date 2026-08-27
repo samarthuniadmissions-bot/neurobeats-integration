@@ -1418,6 +1418,20 @@ function Nav({ page, navigate, goAuth, user, setUser }) {
   );
 }
 function HomePage({ navigate }) {
+  const [focusMode, setFocusMode] = useState('Calm');
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const focusModes = {
+    Calm: { detail: 'Soft ambient layers', signal: 'Low distraction', color: '#8cc9b8' },
+    Flow: { detail: 'Warm rhythmic pulse', signal: 'Steady momentum', color: '#e1bd67' },
+    Deep: { detail: 'Focused tonal space', signal: 'High concentration', color: '#9eb6ed' },
+  };
+  const activeMode = focusModes[focusMode];
+  function handleStageMove(event) {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 12;
+    const y = ((event.clientY - bounds.top) / bounds.height - 0.5) * -12;
+    setTilt({ x: y, y: x });
+  }
   return (
     <section className="landing">
       <div className="hero-copy">
@@ -1438,15 +1452,25 @@ function HomePage({ navigate }) {
             <span><Headphones size={16} /> Your focus session</span>
             <strong>Ready</strong>
           </div>
-          <div className="focus-orb" aria-hidden="true">
-            <div className="focus-orb-inner">
-              <Music2 size={32} />
+          <div className="focus-stage" onPointerMove={handleStageMove} onPointerLeave={() => setTilt({ x: 0, y: 0 })} style={{ '--stage-x': `${tilt.x}deg`, '--stage-y': `${tilt.y}deg`, '--mode-color': activeMode.color }}>
+            <div className="focus-stage-grid" aria-hidden="true" />
+            <div className="focus-stage-orbit orbit-one" aria-hidden="true" />
+            <div className="focus-stage-orbit orbit-two" aria-hidden="true" />
+            <div className="focus-stage-node node-one" aria-hidden="true" />
+            <div className="focus-stage-node node-two" aria-hidden="true" />
+            <div className="focus-stage-core" aria-label={`${focusMode} focus mode`}>
+              <div className="focus-stage-core-glow" />
+              <div className="focus-orb-inner"><Music2 size={32} /></div>
             </div>
+            <div className="focus-stage-label"><span>Neurobeat field</span><strong>{focusMode}</strong></div>
+          </div>
+          <div className="focus-mode-switcher" aria-label="Choose a focus mode">
+            {Object.keys(focusModes).map((mode) => <button key={mode} className={focusMode === mode ? 'active' : ''} onClick={() => setFocusMode(mode)}>{mode}</button>)}
           </div>
           <div className="focus-preview-metrics">
-            <span><small>Sound</small><strong>Matched to you</strong></span>
+            <span><small>Sound</small><strong>{activeMode.detail}</strong></span>
             <span><small>Task</small><strong>Timed challenge</strong></span>
-            <span><small>Result</small><strong>Mood + score</strong></span>
+            <span><small>Signal</small><strong>{activeMode.signal}</strong></span>
           </div>
           <p><strong>One quiet session. One clearer step.</strong> Pick a sound, complete a short task, and see what helps your focus.</p>
         </div>
