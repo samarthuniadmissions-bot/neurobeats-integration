@@ -5184,3 +5184,127 @@ body { font-size: 18px; }
   .cube-face.top { transform: rotateX(90deg) translateZ(24px); }
   .cube-face.bottom { transform: rotateX(-90deg) translateZ(24px); }
 }
+
+/* ============================================================
+   Original Neurobeats palette + simplified, easy-to-use layer
+   ============================================================ */
+
+:root {
+  --charcoal: #17201d;
+  --paper: #fffaf0;
+  --line: rgba(23, 32, 29, 0.13);
+  --teal: #2d8c7f;
+  --teal-deep: #1f6659;
+  --teal-soft: #e6f1ee;
+  --gold: #c49f3f;
+  --yellow: #c49f3f;
+  --yellow-soft: #f6ecd3;
+  --orange: #a5533f;
+  --clay: #a5533f;
+  --surface-glass: rgba(255, 250, 240, 0.9);
+  --surface-tint: rgba(255, 250, 240, 0.7);
+  --shadow-soft: 0 14px 30px rgba(23, 32, 29, 0.07);
+  --shadow-lift: 0 18px 40px rgba(23, 32, 29, 0.1);
+
+  --background: #f4f1ea;
+  --foreground: #17201d;
+  --card: #fffaf0;
+  --card-foreground: #17201d;
+  --primary: #2d8c7f;
+  --primary-foreground: #fffaf0;
+  --secondary: #e6f1ee;
+  --secondary-foreground: #17201d;
+  --muted: #69716d;
+  --muted-foreground: #69716d;
+  --accent: #c49f3f;
+  --accent-foreground: #17201d;
+  --border: rgba(23, 32, 29, 0.13);
+  --input: rgba(23, 32, 29, 0.16);
+  --ring: #2d8c7f;
+}
+
+/* calm original background, no drifting blobs */
+body {
+  font-family: 'Manrope', sans-serif;
+  color: var(--charcoal);
+  background: #f4f1ea;
+  background-image:
+    linear-gradient(135deg, rgba(196, 159, 63, 0.16), transparent 34%),
+    linear-gradient(220deg, rgba(45, 140, 127, 0.16), transparent 39%),
+    radial-gradient(circle at 50% 0%, rgba(255, 250, 240, 0.95), rgba(244, 241, 234, 0.96) 46%, #ece6da);
+  background-attachment: fixed;
+  animation: none !important;
+}
+body::before, body::after { display: none !important; content: none !important; }
+
+h1, h2, h3, .brand,
+.content-page h1, .auth-view h1, .home-section h2,
+.features-hero h1, .workflow-hero h1, .policy-page h1, .feedback-hero h1 {
+  font-family: 'Space Grotesk', 'Manrope', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+/* --- simpler shapes: gentle rounded rectangles, no pill circus --- */
+.top-nav { border-radius: 16px; background: rgba(255, 250, 240, 0.92); box-shadow: var(--shadow-soft); }
+.brand-mark { background: var(--teal); border-radius: 10px; box-shadow: none; }
+.nav-links button, .auth-actions button, .nav-more-trigger { border-radius: 10px; }
+.nav-links button:hover, .nav-links button.active { background: var(--teal-soft); color: var(--teal-deep); }
+
+.landing-panel, .home-card-grid article, .now-playing, .vision-card,
+.metric, .home-section > article, .content-page section { border-radius: 18px !important; }
+
+.primary-action, .big-cta {
+  background: var(--teal) !important;
+  background-image: none !important;
+  color: var(--paper) !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 18px rgba(45, 140, 127, 0.24) !important;
+  animation: none !important;
+}
+.primary-action:hover, .big-cta:hover {
+  background: var(--teal-deep) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 22px rgba(45, 140, 127, 0.28) !important;
+}
+.secondary-action {
+  background: var(--paper) !important;
+  color: var(--teal-deep) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+}
+.secondary-action:hover { background: var(--teal-soft) !important; transform: none !important; }
+
+/* --- calmer motion: keep only the essentials --- */
+.eyebrow, .badge, .step-bubble, .home-card-grid article svg { animation: none !important; }
+.home-card-grid article:hover, .big-steps .home-card-grid article:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: var(--shadow-lift) !important;
+}
+.big-steps .home-card-grid article .step-bubble {
+  transform: none;
+  background: var(--gold);
+  color: var(--charcoal);
+  box-shadow: none;
+}
+.focus-orb { background: radial-gradient(circle at 35% 30%, #ffffff, var(--teal-soft) 45%, var(--teal) 100%) !important; animation: none !important; }
+.cube-field { display: none !important; }
+
+/* keep the 3D record, just quieter */
+.vinyl-3d-disc { animation-duration: 7s; }
+.vinyl-3d-label { background: var(--gold); color: var(--charcoal); }
+.vinyl-3d-disc::before { background: conic-gradient(from 0deg, transparent 0deg, rgba(255,250,240,0.35) 50deg, transparent 130deg); }
+
+/* --- readable, roomy, easy to scan --- */
+html { font-size: 17px; }
+.landing.simple-home { row-gap: 34px; }
+.hero-copy p, .home-card-grid article p { color: var(--muted-foreground); font-size: 1.02rem; line-height: 1.6; }
+.eyebrow { background: var(--teal-soft); color: var(--teal-deep); border: 1px solid var(--line); border-radius: 999px; }
+.live-dot { background: var(--clay); }
+.metric strong, .metric b { color: var(--teal-deep); }
+.equalizer span, .live-equalizer span { background: linear-gradient(180deg, var(--teal), var(--gold)) !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
