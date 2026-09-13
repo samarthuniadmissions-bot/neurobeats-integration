@@ -37,7 +37,7 @@ const STORAGE_KEY = 'neurobeats-sessions';
 const USER_KEY = 'neurobeats-user';
 const USERS_KEY = 'neurobeats-users';
 const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
-const JAMENDO_CLIENT_ID = import.meta.env.VITE_JAMENDO_CLIENT_ID || '';
+const JAMENDO_CLIENT_ID = import.meta.env.JAMENDO_CLIENT_ID || import.meta.env.VITE_JAMENDO_CLIENT_ID || '';
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || '';
 const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '';
 const EMAILJS_ADMIN_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_ADMIN_TEMPLATE_ID || EMAILJS_TEMPLATE_ID;
@@ -2248,7 +2248,7 @@ function MusicPanel(props) {
               </article>
             ))}
             {props.songStatus === 'empty' ? <p className="muted">No Jamendo tracks matched that search. Try a shorter mood, genre, or artist name.</p> : null}
-            {props.songStatus === 'error' ? <p className="muted">Jamendo music is not configured for this deployment. Add <code>VITE_JAMENDO_CLIENT_ID</code> in Vercel and redeploy.</p> : null}
+            {props.songStatus === 'error' ? <p className="muted">Jamendo music is not configured for this deployment. Add <code>JAMENDO_CLIENT_ID</code> in Vercel and redeploy.</p> : null}
           </div>
         </div>
       ) : null}
