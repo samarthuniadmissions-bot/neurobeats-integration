@@ -885,11 +885,9 @@ h1 {
   white-space: nowrap;
 }
 .feedback-rating i {
-  color: rgba(23, 32, 29, 0.2);
+  color: rgba(23, 32, 29, 0.16);
   font-style: normal;
 }
-.feedback-rating i.filled { color: #9b5b45; }
-.feedback-rating i.empty { color: rgba(23, 32, 29, 0.18); }
 .optional-badge {
   display: inline-flex;
   align-items: center;

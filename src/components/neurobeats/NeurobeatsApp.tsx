@@ -2918,7 +2918,7 @@ function FeedbackPage({ navigate, sessions = [], user }) {
               <article className="your-feedback-card" key={session.id}>
                 <div className="your-feedback-card-top"><div><strong>{session.taskName}</strong><small>{formatReceiptDate(session.feedbackDate || session.date)} · {session.soundUsed}</small></div><span className="feedback-score">{session.accuracy}/100</span></div>
                 {session.feedback ? <blockquote>“{session.feedback}”</blockquote> : null}
-                <div className="your-feedback-meta"><span>After-session mood: {session.postMood}/10</span><span className="feedback-rating" aria-label={session.feedbackRating ? `${session.feedbackRating} out of 5 stars` : 'No rating provided'}>{session.feedbackRating ? [1, 2, 3, 4, 5].map((rating) => <i key={rating} className={rating <= session.feedbackRating ? 'filled' : 'empty'}>★</i>) : 'No rating provided'}</span></div>
+                <div className="your-feedback-meta"><span>After-session mood: {session.postMood}/10</span><span className="feedback-rating" aria-label={session.feedbackRating ? `${session.feedbackRating} out of 5 stars` : 'No rating provided'}>{session.feedbackRating ? `${'★'.repeat(session.feedbackRating)}${'☆'.repeat(5 - session.feedbackRating)}` : 'No rating provided'}</span></div>
               </article>
             ))}
           </div>
