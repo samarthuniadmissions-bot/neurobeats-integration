@@ -888,6 +888,69 @@ h1 {
   color: rgba(23, 32, 29, 0.16);
   font-style: normal;
 }
+.optional-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 5px 10px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+.feedback-label-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+.feedback-rating-input {
+  display: grid;
+  gap: 3px;
+  margin-top: 16px;
+}
+.feedback-stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.feedback-stars button {
+  padding: 2px 4px;
+  color: rgba(23, 32, 29, 0.2);
+  background: transparent;
+  border: 0;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.feedback-stars button.active { color: var(--gold); }
+.feedback-stars button:hover { color: var(--gold); transform: translateY(-1px); }
+.feedback-stars .clear-rating {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.your-feedback-section { display: grid; gap: 18px; margin: 36px 0 64px; }
+.your-feedback-list { display: grid; gap: 14px; }
+.your-feedback-card {
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  background: var(--surface-glass);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+.your-feedback-card-top,
+.your-feedback-meta { display: flex; justify-content: space-between; gap: 18px; align-items: center; }
+.your-feedback-card-top strong,
+.your-feedback-card-top small { display: block; }
+.your-feedback-card-top small { margin-top: 4px; color: var(--muted); font-size: 0.78rem; }
+.your-feedback-card blockquote { margin: 0; color: var(--charcoal); font-family: Georgia, 'Times New Roman', serif; font-size: 1.08rem; line-height: 1.45; }
+.feedback-score { color: var(--teal-deep); font-weight: 900; white-space: nowrap; }
+.your-feedback-meta { padding-top: 12px; border-top: 1px dashed var(--line); color: var(--muted); font-size: 0.78rem; font-weight: 800; }
+.your-feedback-empty { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .feedback-example-card blockquote {
   min-height: 90px;
   color: var(--charcoal);

@@ -833,6 +833,7 @@ function App() {
   const [aiInsight, setAiInsight] = useState('');
   const [aiStatus, setAiStatus] = useState('idle');
   const [feedback, setFeedback] = useState('');
+  const [feedbackRating, setFeedbackRating] = useState(0);
   const [feedbackInsight, setFeedbackInsight] = useState('');
   const [feedbackSongs, setFeedbackSongs] = useState([]);
   const [feedbackTrackHistory, setFeedbackTrackHistory] = useState([]);
@@ -1101,6 +1102,7 @@ useEffect(() => {
     setAudioOn(profileId !== 'silence');
     setAiInsight('');
     setFeedback('');
+    setFeedbackRating(0);
     setFeedbackInsight('');
     setFeedbackSongs([]);
   }
@@ -1195,9 +1197,16 @@ useEffect(() => {
   }
 
   async function submitFeedback() {
-    if (!latestSession || !feedback.trim()) return;
+    if (!latestSession || (!feedback.trim() && !feedbackRating)) return;
     setFeedbackStatus('loading');
     setFeedbackSongs([]);
+    const feedbackEntry = {
+      feedback: feedback.trim(),
+      feedbackRating: feedbackRating || null,
+      feedbackDate: new Date().toISOString(),
+    };
+    setLatestSession((currentSession) => currentSession?.id === latestSession.id ? { ...currentSession, ...feedbackEntry } : currentSession);
+    setSessions((currentSessions) => currentSessions.map((item) => item.id === latestSession.id ? { ...item, ...feedbackEntry } : item));
     const sentiment = getFeedbackSentiment(feedback);
     const feedbackKeywords = getFeedbackKeywords(feedback);
     const selectedArtist = selectedSong?.artistName || '';
@@ -1233,6 +1242,8 @@ useEffect(() => {
         { role: 'user', content: JSON.stringify({ feedback, sentiment, latestSession, usedFeedbackQuery, freshSongCount: freshSongs.length }) },
       ], fallback);
       setFeedbackInsight(analysis);
+      setLatestSession((currentSession) => currentSession?.id === latestSession.id ? { ...currentSession, ...feedbackEntry, feedbackInsight: analysis } : currentSession);
+      setSessions((currentSessions) => currentSessions.map((item) => item.id === latestSession.id ? { ...item, ...feedbackEntry, feedbackInsight: analysis } : item));
       setFeedbackSongs(freshSongs);
       setFeedbackTrackHistory((currentHistory) => [...currentHistory, ...freshSongs].slice(-72));
       if (freshSongs.length) {
@@ -1382,6 +1393,8 @@ useEffect(() => {
         downloadCard={downloadCard}
         feedback={feedback}
         setFeedback={setFeedback}
+        feedbackRating={feedbackRating}
+        setFeedbackRating={setFeedbackRating}
         feedbackInsight={feedbackInsight}
         feedbackSongs={feedbackSongs}
         feedbackStatus={feedbackStatus}
@@ -1392,7 +1405,7 @@ useEffect(() => {
       />
     ),
     results: <ResultsPage sessions={userSessions} navigate={navigate} />,
-    feedback: <FeedbackPage navigate={navigate} />,
+    feedback: <FeedbackPage navigate={navigate} sessions={userSessions} user={user} />,
     login: <AuthView mode="login" setMode={goAuth} navigate={navigate} onSubmit={handleAuth} message={authMessage} />,
     signup: <AuthView mode="signup" setMode={goAuth} navigate={navigate} onSubmit={handleAuth} message={authMessage} />,
   };
@@ -2771,8 +2784,16 @@ function InsightAndFeedback(props) {
       </div>
       <div className="feedback-panel">
         <div className="section-heading"><Mail size={22} /><div><h2>Feedback</h2><p>Write about your experience. Groq will recommend music from your feedback and results.</p></div></div>
+        <div className="feedback-label-row"><strong>Your feedback</strong><span className="optional-badge">OPTIONAL</span></div>
         <textarea value={props.feedback} onChange={(event) => props.setFeedback(event.target.value)} placeholder="How did the music feel? Were you focused, distracted, calm, energized, or tired?" />
-        <button className="primary-action" onClick={props.submitFeedback}>{props.feedbackStatus === 'loading' ? 'Analyzing...' : 'Submit Feedback'}</button>
+        <div className="feedback-rating-input">
+          <div className="feedback-label-row"><strong>Rate this session</strong><span className="optional-badge">OPTIONAL</span></div>
+          <div className="feedback-stars" role="radiogroup" aria-label="Optional session rating">
+            {[1, 2, 3, 4, 5].map((rating) => <button key={rating} type="button" className={rating <= props.feedbackRating ? 'active' : ''} aria-label={`${rating} out of 5 stars`} aria-pressed={rating <= props.feedbackRating} onClick={() => props.setFeedbackRating(rating)}>★</button>)}
+            {props.feedbackRating ? <button type="button" className="clear-rating" onClick={() => props.setFeedbackRating(0)}>Clear</button> : null}
+          </div>
+        </div>
+        <button className="primary-action" disabled={!props.feedback.trim() && !props.feedbackRating} onClick={props.submitFeedback}>{props.feedbackStatus === 'loading' ? 'Analyzing...' : 'Submit Feedback'}</button>
         {props.feedbackInsight ? <p className="feedback-result">{props.feedbackInsight}</p> : null}
         {props.feedbackSongs?.length ? (
           <div className="feedback-song-list">
@@ -2865,12 +2886,15 @@ function HistoryPage({ user, sessions, goAuth, navigate, shareSession, deleteSes
   );
 }
 
-function FeedbackPage({ navigate }) {
+function FeedbackPage({ navigate, sessions = [], user }) {
   const examples = [
     { name: 'Aanya, Student', mood: 'Calm', focus: 86, rating: 5, sound: 'Lo-fi + rain', comment: 'The steady background helped me stay with a difficult reading task without feeling rushed.', recommendation: 'Try more mellow lo-fi with light piano.' },
     { name: 'Rohan, Employee', mood: 'Energized', focus: 74, rating: 4, sound: 'Ambient electronic', comment: 'Good for getting started. I liked the rhythm, but I needed something softer for the final task.', recommendation: 'Next: atmospheric focus with a slower tempo.' },
     { name: 'Mira, Teacher', mood: 'Focused', focus: 92, rating: 5, sound: 'Classical piano', comment: 'The session felt clear and structured. My score improved when the music stayed consistent.', recommendation: 'Keep piano textures and explore modern classical.' },
   ];
+  const personalFeedback = sessions
+    .filter((session) => session.feedback?.trim() || session.feedbackRating)
+    .sort((a, b) => new Date(b.feedbackDate || b.date) - new Date(a.feedbackDate || a.date));
   return (
     <section className="content-page feedback-page">
       <div className="feedback-hero">
@@ -2886,6 +2910,22 @@ function FeedbackPage({ navigate }) {
         <div><strong>How your feedback helps</strong><p>Groq considers your words, score, mood, task, and previous sound. It then creates a personal response and searches Jamendo for fresh recommendations.</p></div>
         <button className="secondary-action" onClick={() => navigate('focus')}>Share your experience <ChevronRight size={17} /></button>
       </div>
+      <section className="your-feedback-section">
+        <div className="feedback-section-heading"><div><span className="eyebrow"><Mail size={16} /> {user ? 'Your feedback' : 'Saved reflections'}</span><h2>What you shared before.</h2></div><span className="optional-badge">OPTIONAL</span></div>
+        {personalFeedback.length ? (
+          <div className="your-feedback-list">
+            {personalFeedback.map((session) => (
+              <article className="your-feedback-card" key={session.id}>
+                <div className="your-feedback-card-top"><div><strong>{session.taskName}</strong><small>{formatReceiptDate(session.feedbackDate || session.date)} · {session.soundUsed}</small></div><span className="feedback-score">{session.accuracy}/100</span></div>
+                {session.feedback ? <blockquote>“{session.feedback}”</blockquote> : null}
+                <div className="your-feedback-meta"><span>After-session mood: {session.postMood}/10</span><span className="feedback-rating" aria-label={session.feedbackRating ? `${session.feedbackRating} out of 5 stars` : 'No rating provided'}>{session.feedbackRating ? `${'★'.repeat(session.feedbackRating)}${'☆'.repeat(5 - session.feedbackRating)}` : 'No rating provided'}</span></div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="contact-card your-feedback-empty"><p>{user ? 'Your submitted feedback will appear here after a completed focus test.' : 'Complete a focus test and sign in to keep your feedback here.'}</p><button className="primary-action" onClick={() => navigate('focus')}>Start Focus Test <ChevronRight size={17} /></button></div>
+        )}
+      </section>
       <div className="feedback-section-heading"><div><span className="eyebrow"><Activity size={16} /> Community snapshots</span><h2>Real feelings. Useful patterns.</h2></div><p>Sample session reflections</p></div>
       <div className="feedback-example-grid">
         {examples.map((example) => (
