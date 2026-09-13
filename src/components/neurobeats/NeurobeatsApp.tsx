@@ -355,7 +355,7 @@ async function extractMusicSearchTerm(prompt, fallbackTerm, languagePreference =
   if (shortKeyword) return cleanPrompt;
   const fallback = buildFallbackMusicKeywords(cleanPrompt, languagePreference) || fallbackTerm;
   const extracted = await callGroq([
-    { role: 'system', content: 'Extract a Jamendo music search query from the user request. Return only 3 to 8 keywords, artist names, genres, moods, and language or regional music terms. Do not include explanations, punctuation-heavy text, or full sentences.' },
+    { role: 'system', content: 'Extract one precise Jamendo music search query from the user request. Return only 3 to 5 concrete terms. Preserve exact artist names, named genres, moods, instruments, language or regional terms, and the focus context when present. Remove filler words such as music, songs, please, want, help, and recommendation. Never return a generic query such as focus music or English focus music. Do not include explanations, punctuation-heavy text, or full sentences.' },
     { role: 'user', content: JSON.stringify({ prompt: cleanPrompt, languagePreference }) },
   ], fallback);
   return extracted.replace(/["`]/g, '').replace(/\s+/g, ' ').trim().split(/\s+/).slice(0, 8).join(' ') || fallback;
@@ -1039,13 +1039,23 @@ useEffect(() => {
     const originalQuery = String(query || suggestedQuery || '').trim();
     setSongQuery(originalQuery);
     try {
-      const aiQuery = directQuery
-        ? originalQuery
-        : await extractMusicSearchTerm(originalQuery, suggestedQuery, languagePreference);
+      const aiQuery = await extractMusicSearchTerm(originalQuery, suggestedQuery, languagePreference);
       const fallbackQuery = buildFallbackMusicKeywords(originalQuery, languagePreference) || suggestedQuery;
       const languageTerm = languagePreference !== 'Any' ? `${languagePreference} music` : '';
       const intentHints = getMusicIntentHints(originalQuery).join(' ');
-      const searchTerms = [...new Set([aiQuery, fallbackQuery, `${intentHints} ${languageTerm}`.trim(), `${aiQuery} instrumental`, `${languageTerm} focus`.trim()].filter(Boolean))];
+      const broadTerms = [
+        ...getMusicIntentHints(`${originalQuery} ${aiQuery} ${fallbackQuery}`),
+        ...['lofi', 'ambient', 'focus', 'electronic', 'acoustic', 'classical', 'jazz', 'pop', 'rock'],
+      ];
+      const searchTerms = [...new Set([
+        aiQuery,
+        fallbackQuery,
+        `${intentHints} ${languageTerm}`.trim(),
+        `${aiQuery} instrumental`,
+        `${languageTerm} focus`.trim(),
+        ...broadTerms,
+        '',
+      ].filter((term, index, terms) => term || index === terms.length - 1))];
       let results = [];
       let usedQuery = aiQuery;
       for (const term of searchTerms) {
