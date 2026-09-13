@@ -715,9 +715,11 @@ function buildFeedbackSearchFallback(feedback, session) {
 }
 
 async function fetchJamendoSongs(term, { excludeTrackIds = [], avoidArtist = '', offset = 0 } = {}) {
-  if (!JAMENDO_CLIENT_ID) return [];
+  if (!JAMENDO_CLIENT_ID) throw new Error('Jamendo client ID is not configured');
   const response = await fetch(`https://api.jamendo.com/v3.0/tracks/?${new URLSearchParams({ client_id: JAMENDO_CLIENT_ID, format: 'json', search: term, type: 'single albumtrack', audioformat: 'mp32', imagesize: '300', include: 'musicinfo', limit: '24', offset: String(offset) })}`);
+  if (!response.ok) throw new Error(`Jamendo request failed with ${response.status}`);
   const data = await response.json();
+  if (data.headers?.status !== 'success') throw new Error('Jamendo returned an unsuccessful response');
   const blocked = new Set(excludeTrackIds.map(String));
   const blockedArtist = avoidArtist.toLowerCase();
   return (data.results || [])
@@ -931,7 +933,7 @@ useEffect(() => {
     }
     const context = new AudioContext();
     const gain = context.createGain();
-    gain.gain.value = 0.035;
+    gain.gain.value = profileId === 'lofi' ? 0.12 : profileId === 'alpha' ? 0.1 : 0.08;
     gain.connect(context.destination);
     if (profileId === 'silence') {
       synthAudioRef.current = { context };
@@ -1392,7 +1394,6 @@ useEffect(() => {
         loop
         onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
         onTimeUpdate={(event) => setAudioCurrentTime(event.currentTarget.currentTime || 0)}
-        onEnded={() => setAudioOn(false)}
       />
       {loginPrompt ? <LoginModal close={() => setLoginPrompt(false)} goAuth={goAuth} /> : null}
       {!user && !privacyAccepted && ['login', 'signup'].includes(page) ? (
@@ -2230,7 +2231,7 @@ function MusicPanel(props) {
         </div>
       </div>
 
-      {props.songs.length || props.songStatus === 'empty' ? (
+      {props.songs.length || ['empty', 'error'].includes(props.songStatus) ? (
         <div className="music-subsection">
           <h3 className="music-subsection-title">Search results</h3>
           <div className="song-grid">
@@ -2246,7 +2247,8 @@ function MusicPanel(props) {
                 </button>
               </article>
             ))}
-            {props.songStatus === 'empty' ? <p className="muted">No preview tracks found. Try another artist, genre, or search term.</p> : null}
+            {props.songStatus === 'empty' ? <p className="muted">No Jamendo tracks matched that search. Try a shorter mood, genre, or artist name.</p> : null}
+            {props.songStatus === 'error' ? <p className="muted">Jamendo music is not configured for this deployment. Add <code>VITE_JAMENDO_CLIENT_ID</code> in Vercel and redeploy.</p> : null}
           </div>
         </div>
       ) : null}
@@ -2320,7 +2322,7 @@ function TaskPanel(props) {
       {props.phase === 'testing' && props.taskType === 'math' && props.gameVariant === 'math-sort' ? <div className="test-card speed-sort-card"><div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div><SortGame trial={trial} recordAnswer={props.submitIconAnswer} /></div> : null}
       {props.phase === 'testing' && props.gameVariant === 'reaction-tap' ? <div className="test-card reaction-test-card"><div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div><ReactionGame key={props.trialIndex} recordAnswer={props.submitIconAnswer} /></div> : null}
       {props.phase === 'testing' && props.gameVariant === 'color-response' ? <div className="test-card color-response-card"><div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div><ColorResponseGame trial={trial} recordAnswer={props.submitIconAnswer} /></div> : null}
-      {props.phase === 'testing' && props.gameVariant === 'sequence-tap' ? <div className="test-card sequence-tap-card"><div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div><SequenceTapGame trial={trial} recordAnswer={props.submitIconAnswer} /></div> : null}
+      {props.phase === 'testing' && props.gameVariant === 'sequence-tap' ? <div className="test-card sequence-tap-card"><div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div><SequenceTapGame key={`${props.trialIndex}-${trial.q}`} trial={trial} recordAnswer={props.submitIconAnswer} /></div> : null}
       {props.phase === 'testing' && props.gameVariant === 'word-scramble' ? <div className="test-card scramble-card"><div className="test-meta"><span><TimerReset size={16} /> {props.elapsed}s</span><span>{props.trialIndex + 1}/{props.trials.length}</span></div><ScrambleGame trial={trial} submitAnswer={props.submitAnswer} currentAnswer={props.currentAnswer} setCurrentAnswer={props.setCurrentAnswer} /></div> : null}
       {props.phase === 'testing' && props.taskType === 'memory' && props.gameVariant === 'memory-category-sort' && trial.stream ? (
   <div className="test-card stream-test-card">
@@ -2379,12 +2381,23 @@ function ColorResponseGame({ trial, recordAnswer }) {
 
 function SequenceTapGame({ trial, recordAnswer }) {
   const [chosen, setChosen] = useState([]);
+  const [memorizing, setMemorizing] = useState(true);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMemorizing(false), 2200);
+    return () => window.clearTimeout(timer);
+  }, [trial.q]);
+
   function choose(value) {
+    if (memorizing || chosen.length >= trial.sequence.length) return;
+    const expected = trial.sequence[chosen.length];
     const next = [...chosen, value];
     setChosen(next);
-    if (next.length === trial.sequence.length) recordAnswer(next.join('') === trial.sequence.join('') ? 'correct' : 'wrong');
+    if (value !== expected || next.length === trial.sequence.length) {
+      recordAnswer(value === expected && next.length === trial.sequence.length ? 'correct' : 'wrong');
+    }
   }
-  return <div className="sequence-tap-game"><h3>{trial.q}</h3><p className="muted">Tap each number once in the correct order.</p><div className="sequence-tap-options">{['1', '2', '3', '4'].map((value) => <button key={value} type="button" disabled={chosen.includes(value)} onClick={() => choose(value)}>{value}</button>)}</div></div>;
+  return <div className="sequence-tap-game"><span className="sort-instruction">{memorizing ? 'Memorize the sequence' : 'Your turn: tap the same order'}</span><div className="sequence-display" aria-label={memorizing ? `Sequence ${trial.sequence.join(', ')}` : 'Hidden sequence'}>{memorizing ? trial.sequence.map((value) => <strong key={value}>{value}</strong>) : trial.sequence.map((_, index) => <strong key={index}>{chosen[index] || '?'}</strong>)}</div><p className="muted">{memorizing ? 'You will see four numbers, then they will hide. Remember their exact order.' : `Tap number ${chosen.length + 1} of ${trial.sequence.length}. One mistake ends this round.`}</p><div className="sequence-tap-options">{['1', '2', '3', '4'].map((value) => <button key={value} type="button" disabled={memorizing || chosen.includes(value)} onClick={() => choose(value)}>{value}</button>)}</div></div>;
 }
 
 function ScrambleGame({ trial, submitAnswer, currentAnswer, setCurrentAnswer }) {
