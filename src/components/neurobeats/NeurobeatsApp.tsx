@@ -2788,10 +2788,7 @@ function InsightAndFeedback(props) {
         <textarea value={props.feedback} onChange={(event) => props.setFeedback(event.target.value)} placeholder="How did the music feel? Were you focused, distracted, calm, energized, or tired?" />
         <div className="feedback-rating-input">
           <div className="feedback-label-row"><strong>Rate this session</strong><span className="optional-badge">OPTIONAL</span></div>
-          <div className="feedback-stars" role="radiogroup" aria-label="Optional session rating">
-            {[1, 2, 3, 4, 5].map((rating) => <button key={rating} type="button" className={rating <= props.feedbackRating ? 'active' : ''} aria-label={`${rating} out of 5 stars`} aria-pressed={rating <= props.feedbackRating} onClick={() => props.setFeedbackRating(rating)}>★</button>)}
-            {props.feedbackRating ? <button type="button" className="clear-rating" onClick={() => props.setFeedbackRating(0)}>Clear</button> : null}
-          </div>
+          <RatingStars value={props.feedbackRating} onChange={props.setFeedbackRating} interactive label="Optional session rating" />
         </div>
         <button className="primary-action" disabled={!props.feedback.trim() && !props.feedbackRating} onClick={props.submitFeedback}>{props.feedbackStatus === 'loading' ? 'Analyzing...' : 'Submit Feedback'}</button>
         {props.feedbackInsight ? <p className="feedback-result">{props.feedbackInsight}</p> : null}
@@ -2886,6 +2883,20 @@ function HistoryPage({ user, sessions, goAuth, navigate, shareSession, deleteSes
   );
 }
 
+function RatingStars({ value = 0, onChange, interactive = false, label = 'Session rating' }) {
+  const stars = [1, 2, 3, 4, 5];
+  return (
+    <div className={`feedback-stars ${interactive ? 'interactive' : ''}`} role={interactive ? 'radiogroup' : undefined} aria-label={label}>
+      {stars.map((rating) => interactive ? (
+        <button key={rating} type="button" className={rating <= value ? 'active' : ''} aria-label={`${rating} out of 5 stars`} aria-pressed={rating <= value} onClick={() => onChange(rating)}>★</button>
+      ) : (
+        <span key={rating} className={rating <= value ? 'filled' : 'empty'} aria-hidden="true">★</span>
+      ))}
+      {interactive && value ? <button type="button" className="clear-rating" onClick={() => onChange(0)}>Clear</button> : null}
+    </div>
+  );
+}
+
 function FeedbackPage({ navigate, sessions = [], user }) {
   const examples = [
     { name: 'Aanya, Student', mood: 'Calm', focus: 86, rating: 5, sound: 'Lo-fi + rain', comment: 'The steady background helped me stay with a difficult reading task without feeling rushed.', recommendation: 'Try more mellow lo-fi with light piano.' },
@@ -2918,7 +2929,7 @@ function FeedbackPage({ navigate, sessions = [], user }) {
               <article className="your-feedback-card" key={session.id}>
                 <div className="your-feedback-card-top"><div><strong>{session.taskName}</strong><small>{formatReceiptDate(session.feedbackDate || session.date)} · {session.soundUsed}</small></div><span className="feedback-score">{session.accuracy}/100</span></div>
                 {session.feedback ? <blockquote>“{session.feedback}”</blockquote> : null}
-                <div className="your-feedback-meta"><span>After-session mood: {session.postMood}/10</span><span className="feedback-rating" aria-label={session.feedbackRating ? `${session.feedbackRating} out of 5 stars` : 'No rating provided'}>{session.feedbackRating ? `${'★'.repeat(session.feedbackRating)}${'☆'.repeat(5 - session.feedbackRating)}` : 'No rating provided'}</span></div>
+                <div className="your-feedback-meta"><span>After-session mood: {session.postMood}/10</span>{session.feedbackRating ? <RatingStars value={session.feedbackRating} label={`${session.feedbackRating} out of 5 stars`} /> : <span>No rating provided</span>}</div>
               </article>
             ))}
           </div>
@@ -2930,7 +2941,7 @@ function FeedbackPage({ navigate, sessions = [], user }) {
       <div className="feedback-example-grid">
         {examples.map((example) => (
           <article className="feedback-example-card" key={example.name}>
-            <div className="feedback-example-top"><div className="feedback-avatar">{example.name[0]}</div><div><strong>{example.name}</strong><small>{example.sound}</small></div><span className="feedback-rating" aria-label={`${example.rating} out of 5 stars`}>{'★'.repeat(example.rating)}<i>{'★'.repeat(5 - example.rating)}</i></span></div>
+            <div className="feedback-example-top"><div className="feedback-avatar">{example.name[0]}</div><div><strong>{example.name}</strong><small>{example.sound}</small></div><RatingStars value={example.rating} label={`${example.rating} out of 5 stars`} /></div>
             <blockquote>“{example.comment}”</blockquote>
             <div className="feedback-metrics"><span><small>Mood</small><strong>{example.mood}</strong></span><span><small>Focus score</small><strong>{example.focus}/100</strong></span></div>
             <div className="feedback-recommendation"><WandSparkles size={17} /><p><small>AI recommendation</small>{example.recommendation}</p></div>
