@@ -842,6 +842,13 @@ function App() {
   const synthAudioRef = useRef(null);
   const cardRef = useRef(null);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+    const frame = window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
   const selectedProfile = audioProfiles.find((profile) => profile.id === profileId);
   const trials = activeTrials;
   const userSessions = user ? sessions.filter((session) => !session.userEmail || session.userEmail === user.email) : [];
