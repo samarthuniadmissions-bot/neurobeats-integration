@@ -974,6 +974,15 @@ useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function openLatestFeedback() {
+    if (!latestSession || phase !== 'results') {
+      navigate('feedback');
+      return;
+    }
+    setPage('focus');
+    window.setTimeout(() => document.querySelector('.feedback-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 180);
+  }
+
   function goAuth(mode) {
     setAuthMode(mode);
     navigate(mode);
@@ -1392,7 +1401,7 @@ useEffect(() => {
     <main className="site-shell">
       <Nav page={page} navigate={navigate} goAuth={goAuth} user={user} setUser={setUser} />
       {pageContent[page] || pageContent.home}
-      <Footer navigate={navigate} />
+      <Footer navigate={navigate} openLatestFeedback={openLatestFeedback} />
       <audio
         ref={songAudioRef}
         src={selectedSong?.previewUrl || undefined}
@@ -2928,10 +2937,10 @@ function PrivacyGateModal({ scrolled, checked, setChecked, onScrollComplete, onA
   );
 }
 
-function Footer({ navigate }) {
+function Footer({ navigate, openLatestFeedback }) {
   return (
     <footer className="footer">
-      <div><h3>Quick Links</h3>{[['home', 'Home'], ['about', 'About'], ['focus', 'Focus Test'], ['results', 'Results'], ['history', 'History'], ['feedback', 'Feedback'], ['privacy', 'Privacy Policy'], ['terms', 'Terms and Conditions']].map(([id, label]) => <button key={id} onClick={() => navigate(id)}>{label}</button>)}</div>
+      <div><h3>Quick Links</h3>{[['home', 'Home'], ['about', 'About'], ['focus', 'Focus Test'], ['results', 'Results'], ['history', 'History'], ['feedback', 'Feedback'], ['privacy', 'Privacy Policy'], ['terms', 'Terms and Conditions']].map(([id, label]) => <button key={id} onClick={() => id === 'feedback' ? openLatestFeedback() : navigate(id)}>{label}</button>)}</div>
       <div><h3>Contact</h3><a href="mailto:neurobeats.work@gmail.com">neurobeats.work@gmail.com</a><p>India</p></div>
       {/* Temporarily hidden social links. Restore this block when the links are ready.
       <div><h3>Social Links</h3><a href="https://github.com/samarthuniadmissions-bot/Neurobeats" target="_blank" rel="noreferrer"><Share2 size={16} /> GitHub</a><a href="https://www.linkedin.com" target="_blank" rel="noreferrer"><Share2 size={16} /> LinkedIn</a><a href="https://twitter.com" target="_blank" rel="noreferrer"><Share2 size={16} /> Twitter</a><a href="https://www.instagram.com" target="_blank" rel="noreferrer"><Share2 size={16} /> Instagram</a></div>
