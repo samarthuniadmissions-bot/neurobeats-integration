@@ -5641,6 +5641,15 @@ html { font-size: 17px; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
+/* Password visibility controls stay fixed while the input type changes. */
+.password-field button,
+.password-field button:hover,
+.password-field button:active,
+.password-field button:focus-visible {
+  transform: translateY(-50%) !important;
+  transition: color 0.18s ease, background 0.18s ease !important;
+}
+
 /* Center the How It Works title against the complete outer panel. */
 .big-steps > h2 {
   width: 100% !important;
