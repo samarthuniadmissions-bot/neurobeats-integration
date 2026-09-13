@@ -607,7 +607,9 @@ function generateIconCategoryGridTrials() {
 }
 
 function createTrials(taskType, gameId) {
-  const game = taskGames[taskType]?.find((item) => item.id === gameId) || taskGames[taskType]?.[0];
+  const game = taskGames[taskType]?.find((item) => item.id === gameId)
+    || allTaskGames.find((item) => item.taskType === taskType && item.id === gameId)
+    || taskGames[taskType]?.[0];
   if (taskType === 'icons' && game?.id === 'icons-color-match') return generateIconColorTrials();
   if (taskType === 'icons' && game?.id === 'icons-category-count') return generateIconCategoryGridTrials();
   if (taskType === 'icons' && game?.id === 'color-response') return game.trials;
@@ -1133,7 +1135,10 @@ useEffect(() => {
       userEmail: user.email,
       sessionLength: elapsed,
       taskType,
-      taskName: taskGames[taskType].find((game) => game.id === gameVariant)?.name || taskTypes.find((task) => task.id === taskType).name,
+      taskName: (taskGames[taskType]?.find((game) => game.id === gameVariant)
+        || allTaskGames.find((game) => game.taskType === taskType && game.id === gameVariant))?.name
+        || taskTypes.find((task) => task.id === taskType)?.name
+        || 'Focus task',
       taskCategory: taskTypes.find((task) => task.id === taskType).name,
       gameVariant,
       profileId,
