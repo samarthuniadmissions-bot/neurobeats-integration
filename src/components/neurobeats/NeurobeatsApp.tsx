@@ -2063,6 +2063,30 @@ function MusicPanel(props) {
     props.setAudioOn(same ? !props.audioOn : true);
   }
 
+  function selectProfile(profile) {
+    if (props.isGameActive) return;
+    const sameProfile = props.profileId === profile.id;
+    if (sameProfile && profile.id !== 'jamendo') {
+      props.setAudioOn(!props.audioOn);
+      return;
+    }
+    if (sameProfile && profile.id === 'jamendo' && props.selectedSong) {
+      props.setAudioOn(!props.audioOn);
+      return;
+    }
+    props.setProfileId(profile.id);
+    if (profile.id === 'jamendo') {
+      if (props.selectedSong) {
+        props.setAudioOn(true);
+      } else {
+        props.setAudioOn(true);
+        props.searchSongs(props.songQuery || props.suggestedQuery);
+      }
+      return;
+    }
+    props.setAudioOn(profile.id !== 'silence');
+  }
+
   return (
     <div className="sound-panel">
       {props.isGameActive ? <div className="music-lock">⚠️ Sound is locked while the test is running.</div> : null}
@@ -2188,8 +2212,8 @@ function MusicPanel(props) {
         <h3 className="music-subsection-title">Or pick a focus tone</h3>
         <div className="profile-grid">
           {audioProfiles.map((profile) => (
-            <button key={profile.id} className={`profile-card ${props.profileId === profile.id ? 'selected' : ''}`} onClick={() => props.setProfileId(profile.id)} disabled={props.isGameActive} style={{ '--profile-color': profile.color }}>
-              <div className="profile-topline"><span>{profile.name}</span>{props.profileId === profile.id ? <Check size={18} /> : null}</div>
+            <button type="button" key={profile.id} className={`profile-card ${props.profileId === profile.id ? 'selected' : ''}`} onClick={() => selectProfile(profile)} disabled={props.isGameActive} style={{ '--profile-color': profile.color }}>
+              <div className="profile-topline"><span>{profile.name}</span>{props.profileId === profile.id && props.audioOn ? <Pause size={18} /> : props.profileId === profile.id ? <Play size={18} /> : <Check size={18} />}</div>
               <p>{profile.label}</p>
             </button>
           ))}
