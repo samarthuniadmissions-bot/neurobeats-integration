@@ -184,6 +184,9 @@ body::before {
 body::after {
   display: none;
 }
+body::before {
+  display: none;
+}
 @keyframes focusAtmosphere {
   0% { transform: translate3d(-2%, -1%, 0) scale(1); }
   50% { transform: translate3d(2%, 1%, 0) scale(1.04); }
