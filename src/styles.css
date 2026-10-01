@@ -5572,6 +5572,7 @@ body::before {
   pointer-events: none;
   background: url('/neurobeats-atmosphere.png') center / cover no-repeat;
   filter: saturate(1.35) contrast(1.18) brightness(0.92);
+  opacity: 0.8;
 }
 body::after { display: none !important; content: none !important; }
 
