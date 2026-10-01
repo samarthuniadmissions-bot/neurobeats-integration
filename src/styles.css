@@ -182,17 +182,7 @@ body::before {
   animation: focusAtmosphere 18s ease-in-out infinite alternate;
 }
 body::after {
-  inset: 0;
-  opacity: 0.46;
-  background-image:
-    linear-gradient(rgba(45, 140, 127, 0.075) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(45, 140, 127, 0.075) 1px, transparent 1px),
-    radial-gradient(circle at 18% 20%, transparent 0 16%, rgba(45, 140, 127, 0.16) 16.2%, transparent 16.5% 26%, rgba(45, 140, 127, 0.1) 26.2%, transparent 26.5%),
-    radial-gradient(circle at 84% 76%, transparent 0 18%, rgba(196, 159, 63, 0.16) 18.2%, transparent 18.5% 29%, rgba(196, 159, 63, 0.1) 29.2%, transparent 29.5%),
-    radial-gradient(circle at 50% 42%, transparent 0 24%, rgba(255, 250, 240, 0.36) 72%);
-  background-size: 64px 64px, 64px 64px, 100% 100%, 100% 100%, 100% 100%;
-  mask-image: linear-gradient(to bottom, transparent, black 7%, black 93%, transparent);
-  animation: focusGridPulse 12s ease-in-out infinite;
+  display: none;
 }
 @keyframes focusAtmosphere {
   0% { transform: translate3d(-2%, -1%, 0) scale(1); }
