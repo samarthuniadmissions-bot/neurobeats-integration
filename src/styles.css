@@ -164,7 +164,7 @@ body {
   position: relative;
   isolation: isolate;
   overflow-x: hidden;
-  background: url('/neurobeats-atmosphere.png') center / cover fixed no-repeat;
+  background: #e7e0d2;
   background-color: #e7e0d2;
 }
 body::before,
@@ -185,7 +185,13 @@ body::after {
   display: none;
 }
 body::before {
-  display: none;
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: url('/neurobeats-atmosphere.png') center / cover no-repeat;
+  filter: none;
+  animation: none;
 }
 @keyframes focusAtmosphere {
   0% { transform: translate3d(-2%, -1%, 0) scale(1); }
