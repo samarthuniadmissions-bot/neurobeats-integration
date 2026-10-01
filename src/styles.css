@@ -176,13 +176,9 @@ body::after {
   pointer-events: none;
 }
 body::before {
-  background:
-    radial-gradient(circle at 12% 16%, rgba(45, 140, 127, 0.36), transparent 25%),
-    radial-gradient(circle at 88% 12%, rgba(196, 159, 63, 0.34), transparent 24%),
-    radial-gradient(circle at 78% 84%, rgba(165, 83, 63, 0.24), transparent 27%),
-    radial-gradient(circle at 16% 82%, rgba(45, 140, 127, 0.24), transparent 28%),
-    conic-gradient(from 210deg at 50% 48%, transparent 0deg, rgba(45, 140, 127, 0.08) 42deg, transparent 86deg, rgba(196, 159, 63, 0.1) 150deg, transparent 205deg, rgba(165, 83, 63, 0.07) 260deg, transparent 320deg);
-  filter: blur(22px) saturate(1.12);
+  inset: 0;
+  background: url('/neurobeats-atmosphere.png') center / cover no-repeat;
+  filter: saturate(1.08);
   animation: focusAtmosphere 18s ease-in-out infinite alternate;
 }
 body::after {
