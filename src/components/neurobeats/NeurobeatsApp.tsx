@@ -40,6 +40,7 @@ import {
 const STORAGE_KEY = 'neurobeats-sessions';
 const USER_KEY = 'neurobeats-user';
 const USERS_KEY = 'neurobeats-users';
+const LAST_EMAIL_KEY = 'neurobeats-last-email';
 const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
 const JAMENDO_CLIENT_ID = import.meta.env.JAMENDO_CLIENT_ID || import.meta.env.VITE_JAMENDO_CLIENT_ID || '';
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || '';
@@ -52,6 +53,7 @@ const LEGACY_STORAGE_KEYS = {
   [STORAGE_KEY]: 'neuro' + 'beat-sessions',
   [USER_KEY]: 'neuro' + 'beat-user',
   [USERS_KEY]: 'neuro' + 'beat-users',
+  [LAST_EMAIL_KEY]: 'neuro' + 'beat-last-email',
   [PRIVACY_ACCEPTED_KEY]: 'neuro' + 'beat-privacy-accepted',
 };
 
@@ -1043,6 +1045,7 @@ useEffect(() => {
     const confirmPassword = String(form.get('confirmPassword') || '');
     const acceptedLegal = form.get('acceptedLegal') === 'on';
     const users = loadJSON(USERS_KEY, []);
+    localStorage.setItem(LAST_EMAIL_KEY, JSON.stringify(email));
     if (!privacyAccepted) {
       setAuthMessage('Please read and agree to the Privacy Policy popup before continuing.');
       return;
@@ -1088,7 +1091,7 @@ useEffect(() => {
     }
     await sendAuthEmail({ type: 'login', name: found.name, email });
     await sendAdminAuthEmail({ type: 'login', name: found.name, email });
-    setUser(found);
+    setUser({ email: found.email, name: found.name });
     setAuthMessage('Logged in successfully.');
     navigate('focus');
   }
@@ -2036,6 +2039,7 @@ function TermsPage() {
 function AuthView({ mode, setMode, navigate, onSubmit, message }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [rememberedEmail] = useState(() => loadJSON(LAST_EMAIL_KEY, ''));
   const passwordType = showPassword ? 'text' : 'password';
   const confirmPasswordType = showConfirmPassword ? 'text' : 'password';
 
@@ -2048,7 +2052,7 @@ function AuthView({ mode, setMode, navigate, onSubmit, message }) {
       </div>
       <form className="auth-card" onSubmit={onSubmit}>
         {mode === 'signup' ? <input name="name" placeholder="Name" required /> : null}
-        <input name="email" type="email" placeholder="Email" required />
+        <input name="email" type="email" placeholder="Email" defaultValue={rememberedEmail} required />
         <label className="password-field">
           <input name="password" type={passwordType} placeholder="Password" required minLength="6" />
           <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
