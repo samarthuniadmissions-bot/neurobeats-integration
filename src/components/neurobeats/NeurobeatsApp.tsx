@@ -937,9 +937,24 @@ useEffect(() => {
   useEffect(() => {
     if (profileId === 'jamendo') {
       stopSynthAudio();
-      if (audioOn && selectedSong?.previewUrl) songAudioRef.current?.play().catch(() => setAudioOn(false));
-      else songAudioRef.current?.pause();
-      return undefined;
+      const audio = songAudioRef.current;
+      if (!audio || !selectedSong?.previewUrl) return undefined;
+      audio.preload = 'auto';
+      audio.load();
+      if (!audioOn) {
+        audio.pause();
+        return undefined;
+      }
+      let cancelled = false;
+      const playWhenReady = () => {
+        if (!cancelled) audio.play().catch(() => setAudioOn(false));
+      };
+      if (audio.readyState >= 3) playWhenReady();
+      else audio.addEventListener('canplay', playWhenReady, { once: true });
+      return () => {
+        cancelled = true;
+        audio.removeEventListener('canplay', playWhenReady);
+      };
     }
     songAudioRef.current?.pause();
     if (!audioOn) {
@@ -1456,11 +1471,15 @@ useEffect(() => {
       <audio
         ref={songAudioRef}
         src={selectedSong?.previewUrl || undefined}
+        preload="auto"
         loop={loopEnabled}
         onEnded={() => {
           if (!loopEnabled) selectAdjacentSong(1);
         }}
         onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
+        onCanPlay={(event) => {
+          if (profileId === 'jamendo' && audioOn) event.currentTarget.play().catch(() => setAudioOn(false));
+        }}
         onTimeUpdate={(event) => setAudioCurrentTime(event.currentTarget.currentTime || 0)}
       />
       {loginPrompt ? <LoginModal close={() => setLoginPrompt(false)} goAuth={goAuth} /> : null}
