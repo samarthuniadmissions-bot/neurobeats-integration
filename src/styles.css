@@ -5676,6 +5676,39 @@ h1, h2, h3, .brand,
   border-radius: 12px !important;
 }
 .secondary-action:hover { background: var(--teal-soft) !important; transform: none !important; }
+.google-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 54px;
+  margin-top: 14px;
+  padding: 12px 22px;
+  color: var(--paper) !important;
+  background: var(--teal) !important;
+  border: 1px solid var(--teal-deep) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 18px rgba(45, 140, 127, 0.2);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+.google-action:hover {
+  background: var(--teal-deep) !important;
+  transform: translateY(-2px) !important;
+}
+.google-mark {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  color: var(--teal-deep);
+  background: var(--paper);
+  border-radius: 50%;
+  font-family: Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 900;
+}
 
 /* --- calmer motion: keep only the essentials --- */
 .eyebrow, .badge, .step-bubble, .home-card-grid article svg { animation: none !important; }

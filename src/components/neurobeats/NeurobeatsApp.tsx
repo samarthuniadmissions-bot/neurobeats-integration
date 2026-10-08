@@ -2096,7 +2096,7 @@ function AuthView({ mode, setMode, navigate, onSubmit, onGoogleSignIn, firebaseR
           </span>
         </label>
         <button className="primary-action" type="submit">{mode === 'login' ? 'Login' : 'Sign Up'} <ChevronRight size={18} /></button>
-        {firebaseReady ? <button className="secondary-action google-action" type="button" onClick={onGoogleSignIn}>Continue with Google</button> : null}
+        {firebaseReady ? <button className="google-action" type="button" onClick={onGoogleSignIn}><span className="google-mark" aria-hidden="true">G</span> Sign in with Google</button> : null}
         <button className="text-action" type="button" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}>
           {mode === 'login' ? 'Need an account? Sign up' : 'Already have an account? Login'}
         </button>
