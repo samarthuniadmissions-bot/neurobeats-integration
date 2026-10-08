@@ -5698,16 +5698,21 @@ h1, h2, h3, .brand,
   transform: translateY(-2px) !important;
 }
 .google-mark {
-  display: inline-grid;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 28px;
   height: 28px;
-  place-items: center;
-  color: var(--teal-deep);
-  background: var(--paper);
+  flex: 0 0 28px;
+  padding: 4px;
+  background: #fff;
   border-radius: 50%;
-  font-family: Georgia, serif;
-  font-size: 1.1rem;
-  font-weight: 900;
+}
+.google-mark img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 /* --- calmer motion: keep only the essentials --- */
