@@ -242,15 +242,33 @@ function parseArtistPreference(value) {
   return { artist: artist || raw.split(/\s+/).slice(0, 4).join(' '), styleHints };
 }
 
-function buildSearchTerm(role, answers, artistPreference, genres, languagePreference = 'Any') {
+function buildSearchTerm(role, answers, artistPreference, genres, languagePreference = 'Any', taskType = 'math') {
   const { artist, styleHints } = parseArtistPreference(artistPreference);
-  const quizTerms = Object.values(answers).join(' ');
-  const languageTerm = languagePreference && languagePreference !== 'Any' ? `${languagePreference} music` : '';
-  return [artist, ...styleHints.slice(0, 2), ...genres, languageTerm, quizTerms, role, 'focus music'].filter(Boolean).join(' ');
+  const taskName = {
+    math: 'mental arithmetic',
+    memory: 'memory recall',
+    icons: 'visual memory',
+    puzzle: 'logic problem solving',
+    reaction: 'reaction timing',
+  }[taskType] || 'focus practice';
+  const preferenceDetails = Object.entries(answers)
+    .filter(([, value]) => value)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join('; ');
+  const details = [
+    `role: ${role || 'general user'}`,
+    preferenceDetails,
+    `task: ${taskName}`,
+    genres.length ? `preferred genres: ${genres.join(', ')}` : 'genre: open to discovery',
+    languagePreference && languagePreference !== 'Any' ? `language or region: ${languagePreference}` : 'language or region: open',
+    artist ? `artist direction: ${artist}` : '',
+    styleHints.length ? `style cues: ${styleHints.join(', ')}` : '',
+  ].filter(Boolean);
+  return `Personalized music search brief for ${details.join(' | ')}. Find distinctive tracks with a clear fit for this person, not generic focus music.`;
 }
 
-function fallbackMusicOptions(role, answers, artistPreference, genres, languagePreference = 'Any') {
-  const base = buildSearchTerm(role, answers, artistPreference, genres, languagePreference);
+function fallbackMusicOptions(role, answers, artistPreference, genres, languagePreference = 'Any', taskType = 'math') {
+  const base = buildSearchTerm(role, answers, artistPreference, genres, languagePreference, taskType);
   return [
     { title: 'Personal Focus Match', searchTerm: `${base} instrumental`, reason: 'Matches your role, work mode, and optional artist or genre preferences.' },
     { title: 'Low Distraction Flow', searchTerm: `${base} calm ambient`, reason: 'Prioritizes steady attention with fewer distracting changes.' },
@@ -306,7 +324,7 @@ function ensureMusicOptionDiversity(options, { role, answers, artistPreference, 
 }
 
 async function generateGroqMusicOptions({ role, answers, artistPreference, genres, languagePreference, taskType, preMood, previousSessions }) {
-  const fallback = fallbackMusicOptions(role, answers, artistPreference, genres, languagePreference);
+  const fallback = fallbackMusicOptions(role, answers, artistPreference, genres, languagePreference, taskType);
   const response = await callGroq([
     { role: 'system', content: 'You are Neurobeats music personalization AI. Create at least 7 genuinely different recommendations for this specific person and session. Reason from every supplied preference: role, exact answers, task, mood, genre, language, artist, and previous session patterns. Each searchTerm must be a concise, relevant music query containing concrete style terms, not generic filler. Make the options meaningfully different: include a closest match, lower-distraction alternative, energy adjustment, instrumental texture, artist or regional variation, and different genre or tempo directions when possible. Do not use generic phrases such as English Focus Music unless explicitly requested. Return JSON only as an array of objects with exactly: title, searchTerm, reason.' },
     { role: 'user', content: JSON.stringify({ role, answers, artistPreference, genres, languagePreference, taskType, preMood, previousSessions: previousSessions.slice(0, 5).map((session) => ({ taskName: session.taskName, soundUsed: session.soundUsed, accuracy: session.accuracy, postMood: session.postMood, genres: session.genres, languagePreference: session.languagePreference })) }) },
@@ -859,8 +877,8 @@ function App() {
   const userSessions = user ? sessions.filter((session) => !session.userEmail || session.userEmail === user.email) : [];
   const correctAnswers = answers.filter((answer) => answer.correct).length;
   const currentScore = getTimeAdjustedPercent(taskType, correctAnswers, answers.length, elapsed, gameVariant);
-  const suggestedQuery = useMemo(() => buildSearchTerm(role, quizAnswers, artistPreference, genres, languagePreference), [role, quizAnswers, artistPreference, genres, languagePreference]);
-  const [musicOptions, setMusicOptions] = useState(() => fallbackMusicOptions(role, quizAnswers, artistPreference, genres, languagePreference));
+  const suggestedQuery = useMemo(() => buildSearchTerm(role, quizAnswers, artistPreference, genres, languagePreference, taskType), [role, quizAnswers, artistPreference, genres, languagePreference, taskType]);
+  const [musicOptions, setMusicOptions] = useState(() => fallbackMusicOptions(role, quizAnswers, artistPreference, genres, languagePreference, taskType));
   const [musicOptionsStatus, setMusicOptionsStatus] = useState('idle');
   const isGameActive = phase === 'testing';
 
@@ -873,7 +891,7 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
-    const fallback = fallbackMusicOptions(role, quizAnswers, artistPreference, genres, languagePreference);
+    const fallback = fallbackMusicOptions(role, quizAnswers, artistPreference, genres, languagePreference, taskType);
     setMusicOptions(fallback);
     setMusicOptionsStatus('loading');
     const timeout = window.setTimeout(async () => {
@@ -2295,13 +2313,14 @@ function MusicPanel(props) {
 
       <div className="music-subsection">
         <h3 className="music-subsection-title">Search music</h3>
+        <p className="music-subsection-hint">Describe the exact listening experience you want. Groq uses this brief to find a more distinctive match instead of searching a broad genre label.</p>
         <div className="itunes-search">
           <div className="search-line">
             <Search size={18} />
-            <input value={props.songQuery} onChange={(event) => props.setSongQuery(event.target.value)} placeholder={props.suggestedQuery} disabled={props.isGameActive} />
+            <input value={props.songQuery} onChange={(event) => props.setSongQuery(event.target.value)} placeholder="Tell us the mood, pace, texture, task, language, or artist you want..." disabled={props.isGameActive} aria-label="Describe the music you want" />
             <button onClick={() => props.searchSongs(props.songQuery || props.suggestedQuery)} disabled={props.isGameActive}>Find</button>
           </div>
-          <small>{props.songStatus === 'loading' ? 'AI is extracting music keywords and searching the music library...' : props.songStatus === 'ready' ? `Music search: ${props.songQuery}` : `Suggested search: ${props.suggestedQuery}`}</small>
+          <small>{props.songStatus === 'loading' ? 'AI is extracting music keywords and searching the music library...' : props.songStatus === 'ready' ? `Music search: ${props.songQuery}` : `Personalized search brief: ${props.suggestedQuery}`}</small>
         </div>
       </div>
 
