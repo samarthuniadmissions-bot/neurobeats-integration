@@ -24,12 +24,16 @@ import {
   RefreshCw,
   Search,
   Share2,
+  Shuffle,
   SlidersHorizontal,
   Sparkles,
+  SkipBack,
+  SkipForward,
   Target,
   TimerReset,
   UserPlus,
   WandSparkles,
+  Repeat,
 } from 'lucide-react';
 
 
@@ -827,6 +831,7 @@ function App() {
   const [startedAt, setStartedAt] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [audioOn, setAudioOn] = useState(false);
+  const [loopEnabled, setLoopEnabled] = useState(false);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [latestSession, setLatestSession] = useState(null);
@@ -1085,7 +1090,7 @@ useEffect(() => {
         if (results.length) break;
       }
       setSongs(results);
-      setSelectedSong(results[0] || null);
+      setSelectedSong(results.length ? results[Math.floor(Math.random() * results.length)] : null);
       setProfileId('jamendo');
       setSongQuery(directQuery ? originalQuery : usedQuery);
       setSongStatus(results.length ? 'ready' : 'empty');
@@ -1326,6 +1331,26 @@ useEffect(() => {
     setAudioCurrentTime(nextTime);
   }
 
+  function chooseSong(song, autoplay = true) {
+    if (!song) return;
+    setSelectedSong(song);
+    setProfileId('jamendo');
+    setAudioCurrentTime(0);
+    if (autoplay) setAudioOn(true);
+  }
+
+  function selectAdjacentSong(direction = 1, random = false) {
+    if (!songs.length) return;
+    if (random) {
+      const alternatives = songs.filter((song) => song.trackId !== selectedSong?.trackId);
+      chooseSong(alternatives[Math.floor(Math.random() * (alternatives.length || 1))] || songs[0]);
+      return;
+    }
+    const currentIndex = Math.max(0, songs.findIndex((song) => song.trackId === selectedSong?.trackId));
+    const nextIndex = (currentIndex + direction + songs.length) % songs.length;
+    chooseSong(songs[nextIndex]);
+  }
+
   const pageContent = {
     home: <HomePage navigate={navigate} />,
     features: <FeaturesPage navigate={navigate} />,
@@ -1365,6 +1390,12 @@ useEffect(() => {
         audioCurrentTime={audioCurrentTime}
         audioDuration={audioDuration}
         seekAudio={seekAudio}
+        loopEnabled={loopEnabled}
+        setLoopEnabled={setLoopEnabled}
+        chooseSong={chooseSong}
+        previousSong={() => selectAdjacentSong(-1)}
+        nextSong={() => selectAdjacentSong(1)}
+        randomSong={() => selectAdjacentSong(1, true)}
         profileId={profileId}
         setProfileId={setProfileId}
         selectedProfile={selectedProfile}
@@ -1425,7 +1456,10 @@ useEffect(() => {
       <audio
         ref={songAudioRef}
         src={selectedSong?.previewUrl || undefined}
-        loop
+        loop={loopEnabled}
+        onEnded={() => {
+          if (!loopEnabled) selectAdjacentSong(1);
+        }}
         onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration || 0)}
         onTimeUpdate={(event) => setAudioCurrentTime(event.currentTarget.currentTime || 0)}
       />
@@ -2103,9 +2137,8 @@ function MusicPanel(props) {
   function toggleSong(song) {
     if (props.isGameActive) return;
     const same = props.selectedSong?.trackId === song.trackId;
-    props.setSelectedSong(song);
-    props.setProfileId('jamendo');
-    props.setAudioOn(same ? !props.audioOn : true);
+    if (same) props.setAudioOn(!props.audioOn);
+    else props.chooseSong(song);
   }
 
   function selectProfile(profile) {
@@ -2272,7 +2305,7 @@ function MusicPanel(props) {
             {props.songs.map((song) => (
               <article key={song.trackId} className={`song-card ${props.selectedSong?.trackId === song.trackId ? 'selected' : ''}`}>
                 <img src={song.artworkUrl100} alt="" />
-                <button className="song-select" onClick={() => { props.setSelectedSong(song); props.setProfileId('jamendo'); }} disabled={props.isGameActive}>
+                <button className="song-select" onClick={() => props.chooseSong(song, false)} disabled={props.isGameActive}>
                   <span>{song.trackName}</span>
                   <small>{song.artistName}</small>
                 </button>
@@ -2292,7 +2325,7 @@ function MusicPanel(props) {
   );
 }
 
-function SongTimeline({ selectedSong, audioOn, setAudioOn, audioCurrentTime, audioDuration, seekAudio, isGameActive }) {
+function SongTimeline({ selectedSong, audioOn, setAudioOn, audioCurrentTime, audioDuration, seekAudio, isGameActive, loopEnabled, setLoopEnabled, previousSong, nextSong, randomSong }) {
   const duration = Number.isFinite(audioDuration) && audioDuration > 0 ? audioDuration : 30;
   return (
     <div className="song-timeline">
@@ -2303,6 +2336,12 @@ function SongTimeline({ selectedSong, audioOn, setAudioOn, audioCurrentTime, aud
       <button className="song-play large" onClick={() => setAudioOn(!audioOn)} disabled={isGameActive}>
         {audioOn ? <Pause size={17} /> : <Play size={17} />}
       </button>
+      <div className="song-transport" aria-label="Track controls">
+        <button type="button" onClick={previousSong} disabled={isGameActive} aria-label="Previous suggested song" title="Previous suggested song"><SkipBack size={16} /></button>
+        <button type="button" onClick={randomSong} disabled={isGameActive} aria-label="Suggest another song" title="Suggest another song"><Shuffle size={16} /></button>
+        <button type="button" onClick={nextSong} disabled={isGameActive} aria-label="Next suggested song" title="Next suggested song"><SkipForward size={16} /></button>
+        <button type="button" className={loopEnabled ? 'active' : ''} onClick={() => setLoopEnabled(!loopEnabled)} disabled={isGameActive} aria-label={loopEnabled ? 'Turn loop off' : 'Turn loop on'} title={loopEnabled ? 'Loop on' : 'Loop off'}><Repeat size={16} /></button>
+      </div>
       <span className="time-label">{formatClock(audioCurrentTime)}</span>
       <input
         type="range"

@@ -1772,9 +1772,29 @@ textarea {
   width: 40px;
   height: 40px;
 }
+.song-transport {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.song-transport button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  color: var(--paper);
+  background: transparent;
+  border: 1px solid rgba(255, 250, 240, 0.26);
+  border-radius: 999px;
+}
+.song-transport button:hover:not(:disabled),
+.song-transport button.active {
+  color: var(--charcoal);
+  background: var(--paper);
+}
 .song-timeline {
   display: grid;
-  grid-template-columns: minmax(160px, 1fr) auto auto minmax(180px, 1.3fr) auto;
+  grid-template-columns: minmax(160px, 1fr) auto auto auto minmax(180px, 1.3fr) auto;
   gap: 10px;
   align-items: center;
   margin-top: 14px;
@@ -2564,6 +2584,11 @@ textarea {
   }
   .song-timeline {
     grid-template-columns: auto 1fr auto;
+  }
+  .song-transport {
+    grid-column: 1 / -1;
+    justify-content: center;
+    grid-row: 3;
   }
   .timeline-title {
     grid-column: 1 / -1;
