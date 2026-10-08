@@ -69,7 +69,7 @@ const audioProfiles = [
   { id: 'brown-noise', name: 'Brown Noise', label: 'Deep steady noise', tempo: '0 BPM', color: '#83684c' },
   { id: 'lofi', name: 'Lo-fi Pulse', label: 'Warm beat, soft texture', tempo: '72 BPM', color: '#2d8c7f' },
   { id: 'alpha', name: 'Alpha Waves', label: 'Clean 10 Hz shimmer', tempo: '10 Hz', color: '#c49f3f' },
-  { id: 'jamendo', name: 'Jamendo Music', label: 'Full-track independent music', tempo: 'Full track', color: '#a5533f' },
+  { id: 'jamendo', name: 'Recommended Music', label: 'Full-track independent music', tempo: 'Full track', color: '#a5533f' },
   { id: 'silence', name: 'Silence', label: 'Control condition', tempo: '0 BPM', color: '#56616d' },
 ];
 
@@ -1240,7 +1240,7 @@ useEffect(() => {
         if (freshSongs.length) break;
       }
       const fallback = sentiment === 'liked'
-        ? `You scored ${latestSession.accuracy}/100 and liked the sound, so I found similar tracks with some variety. Fresh Jamendo search: ${usedFeedbackQuery}.`
+        ? `You scored ${latestSession.accuracy}/100 and liked the sound, so I found similar tracks with some variety. Fresh music search: ${usedFeedbackQuery}.`
         : sentiment === 'disliked'
           ? `You scored ${latestSession.accuracy}/100 and did not enjoy the sound, so I avoided that track/artist and searched for a calmer alternative: ${usedFeedbackQuery}.`
           : `Your feedback was mixed, so I balanced your ${latestSession.accuracy}/100 score with a fresh focus search: ${usedFeedbackQuery}.`;
@@ -1667,8 +1667,8 @@ const featureDetails = [
   {
     title: 'AI Music Recommendations',
     summary: 'Find sound that fits your mood, role, task, and listening preferences.',
-    detail: 'Answer a few optional questions or describe what you need in your own words. Groq identifies useful moods, genres, artists, languages, and search terms, then Jamendo returns fresh full-track recommendations with playback controls.',
-    points: ['Natural-language music prompts', 'Optional artist, genre, and language filters', 'Fresh Jamendo results with full-track playback'],
+    detail: 'Answer a few optional questions or describe what you need in your own words. Groq identifies useful moods, genres, artists, languages, and search terms, then the music library returns fresh full-track recommendations with playback controls.',
+    points: ['Natural-language music prompts', 'Optional artist, genre, and language filters', 'Fresh music results with full-track playback'],
     icon: Headphones,
   },
   {
@@ -1761,7 +1761,7 @@ const workflowSteps = [
   {
     title: 'Get AI Music Recommendations',
     summary: 'AI suggests music based on your answers and natural-language prompts.',
-    detail: 'Groq extracts useful moods, genres, artist hints, and keywords, then the app searches Jamendo for fresh music recommendations.',
+    detail: 'Groq extracts useful moods, genres, artist hints, and keywords, then the app searches the music library for fresh recommendations.',
     icon: WandSparkles,
   },
   {
@@ -2242,14 +2242,14 @@ function MusicPanel(props) {
       </div>
 
       <div className="music-subsection">
-        <h3 className="music-subsection-title">Search Jamendo music</h3>
+        <h3 className="music-subsection-title">Search music</h3>
         <div className="itunes-search">
           <div className="search-line">
             <Search size={18} />
             <input value={props.songQuery} onChange={(event) => props.setSongQuery(event.target.value)} placeholder={props.suggestedQuery} disabled={props.isGameActive} />
             <button onClick={() => props.searchSongs(props.songQuery || props.suggestedQuery)} disabled={props.isGameActive}>Find</button>
           </div>
-          <small>{props.songStatus === 'loading' ? 'AI is extracting music keywords and searching Jamendo...' : props.songStatus === 'ready' ? `Searched Jamendo for: ${props.songQuery}` : `Suggested search: ${props.suggestedQuery}`}</small>
+          <small>{props.songStatus === 'loading' ? 'AI is extracting music keywords and searching the music library...' : props.songStatus === 'ready' ? `Music search: ${props.songQuery}` : `Suggested search: ${props.suggestedQuery}`}</small>
         </div>
       </div>
 
@@ -2281,8 +2281,8 @@ function MusicPanel(props) {
                 </button>
               </article>
             ))}
-            {props.songStatus === 'empty' ? <p className="muted">No Jamendo tracks matched that search. Try a shorter mood, genre, or artist name.</p> : null}
-            {props.songStatus === 'error' ? <p className="muted">Jamendo music is not configured for this deployment. Add <code>JAMENDO_CLIENT_ID</code> in Vercel and redeploy.</p> : null}
+            {props.songStatus === 'empty' ? <p className="muted">No tracks matched that search. Try a shorter mood, genre, or artist name.</p> : null}
+            {props.songStatus === 'error' ? <p className="muted">Music recommendations are not configured for this deployment yet.</p> : null}
           </div>
         </div>
       ) : null}
@@ -2298,7 +2298,7 @@ function SongTimeline({ selectedSong, audioOn, setAudioOn, audioCurrentTime, aud
     <div className="song-timeline">
       <div className="timeline-title">
         <strong>{selectedSong.trackName}</strong>
-        <span>Full Jamendo track</span>
+        <span>Full-track music</span>
       </div>
       <button className="song-play large" onClick={() => setAudioOn(!audioOn)} disabled={isGameActive}>
         {audioOn ? <Pause size={17} /> : <Play size={17} />}
@@ -2925,7 +2925,7 @@ function FeedbackPage({ navigate, sessions = [], user }) {
       </div>
       <div className="feedback-explainer">
         <div className="feedback-explainer-icon"><Sparkles size={24} /></div>
-        <div><strong>How your feedback helps</strong><p>Groq considers your words, score, mood, task, and previous sound. It then creates a personal response and searches Jamendo for fresh recommendations.</p></div>
+        <div><strong>How your feedback helps</strong><p>Groq considers your words, score, mood, task, and previous sound. It then creates a personal response and searches the music library for fresh recommendations.</p></div>
         <button className="secondary-action" onClick={() => navigate('focus')}>Share your experience <ChevronRight size={17} /></button>
       </div>
       <section className="your-feedback-section">
