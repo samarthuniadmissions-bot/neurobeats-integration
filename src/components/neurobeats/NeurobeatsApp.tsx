@@ -2,6 +2,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import emailjs from '@emailjs/browser';
 import html2canvas from 'html2canvas';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { firebaseAuth, firebaseConfigured } from '../../lib/firebase';
 import {
   Activity,
   BarChart3,
@@ -1096,6 +1098,23 @@ useEffect(() => {
     navigate('focus');
   }
 
+  async function handleGoogleAuth() {
+    if (!firebaseConfigured || !firebaseAuth) {
+      setAuthMessage('Google sign-in is not configured yet. Add the Firebase environment variables first.');
+      return;
+    }
+    try {
+      const result = await signInWithPopup(firebaseAuth, new GoogleAuthProvider());
+      const signedInUser = { email: result.user.email || '', name: result.user.displayName || result.user.email?.split('@')[0] || 'Neurobeats user' };
+      localStorage.setItem(LAST_EMAIL_KEY, JSON.stringify(signedInUser.email));
+      setUser(signedInUser);
+      setAuthMessage('Logged in successfully with Google.');
+      navigate('focus');
+    } catch (error) {
+      if (error?.code !== 'auth/popup-closed-by-user') setAuthMessage('Google sign-in could not be completed. Please try again.');
+    }
+  }
+
   async function searchSongs(query = suggestedQuery, directQuery = false) {
     setSongStatus('loading');
     const originalQuery = String(query || suggestedQuery || '').trim();
@@ -1480,8 +1499,8 @@ useEffect(() => {
     ),
     results: <ResultsPage sessions={userSessions} navigate={navigate} />,
     feedback: <FeedbackPage navigate={navigate} sessions={userSessions} user={user} />,
-    login: <AuthView mode="login" setMode={goAuth} navigate={navigate} onSubmit={handleAuth} message={authMessage} />,
-    signup: <AuthView mode="signup" setMode={goAuth} navigate={navigate} onSubmit={handleAuth} message={authMessage} />,
+    login: <AuthView mode="login" setMode={goAuth} navigate={navigate} onSubmit={handleAuth} onGoogleSignIn={handleGoogleAuth} firebaseReady={firebaseConfigured} message={authMessage} />,
+    signup: <AuthView mode="signup" setMode={goAuth} navigate={navigate} onSubmit={handleAuth} onGoogleSignIn={handleGoogleAuth} firebaseReady={firebaseConfigured} message={authMessage} />,
   };
 
   return (
@@ -2036,7 +2055,7 @@ function TermsPage() {
   );
 }
 
-function AuthView({ mode, setMode, navigate, onSubmit, message }) {
+function AuthView({ mode, setMode, navigate, onSubmit, onGoogleSignIn, firebaseReady, message }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberedEmail] = useState(() => loadJSON(LAST_EMAIL_KEY, ''));
@@ -2077,6 +2096,7 @@ function AuthView({ mode, setMode, navigate, onSubmit, message }) {
           </span>
         </label>
         <button className="primary-action" type="submit">{mode === 'login' ? 'Login' : 'Sign Up'} <ChevronRight size={18} /></button>
+        {firebaseReady ? <button className="secondary-action google-action" type="button" onClick={onGoogleSignIn}>Continue with Google</button> : null}
         <button className="text-action" type="button" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}>
           {mode === 'login' ? 'Need an account? Sign up' : 'Already have an account? Login'}
         </button>
