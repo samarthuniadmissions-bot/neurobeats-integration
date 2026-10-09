@@ -1111,7 +1111,25 @@ useEffect(() => {
       setAuthMessage('Logged in successfully with Google.');
       navigate('focus');
     } catch (error) {
-      if (error?.code !== 'auth/popup-closed-by-user') setAuthMessage('Google sign-in could not be completed. Please try again.');
+      const code = error?.code || '';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+      if (code === 'auth/popup-blocked') {
+        setAuthMessage('Google sign-in was blocked by your browser. Allow pop-ups for Neurobeats and try again.');
+        return;
+      }
+      if (code === 'auth/unauthorized-domain') {
+        setAuthMessage('This website is not authorized for Google sign-in yet. Add neurobeats-integration1.vercel.app in Firebase Authentication settings.');
+        return;
+      }
+      if (code === 'auth/operation-not-allowed') {
+        setAuthMessage('Google sign-in is not enabled in Firebase yet. Enable the Google provider and try again.');
+        return;
+      }
+      if (code === 'auth/invalid-api-key' || code === 'auth/api-key-not-valid') {
+        setAuthMessage('Firebase configuration is invalid in the deployed app. Check the Production Firebase environment variables in Vercel.');
+        return;
+      }
+      setAuthMessage(`Google sign-in could not be completed (${code || 'unknown error'}). Please try again.`);
     }
   }
 
